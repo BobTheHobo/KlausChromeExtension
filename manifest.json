@@ -1,0 +1,19 @@
+{
+    "name": "Klaus Website Blocker",
+    "manifest_version": 3,
+    "description": "Blocks specified websites",
+    "version": "1.0",
+    "action": {
+        "default_title": "Klaus: Click to view and edit blocked websites",
+        "default_popup": "options.html"
+    },
+    "permissions": [
+        "storage",
+        "tabs",
+        "scripting"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "options_page": "options.html"
+}
