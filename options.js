@@ -33,37 +33,18 @@ checkbox.addEventListener("change", (event) => {
 
 //syncs data across all instances (ie popup and full tab options) of the extension when something changes 
 chrome.storage.onChanged.addListener(changeData => {
-    chrome.storage.sync.get(["blockedWebsites", "blockerEnabled"], function(data) {
-        if (data.blockedWebsites) {
-            if (textarea.value != data.blockedWebsites.join("\n")) {
-                textarea.value = data.blockedWebsites.join("\n");
-                console.log("Sync'd blocked website list")
-            }
-        }
+    if (changeData.blockedWebsites) {
+        textarea.value = changeData.blockedWebsites.newValue.join("\n");
+    }
 
-        if (typeof data.blockerEnabled == "boolean") {
-            if (checkbox.checked != data.blockerEnabled) {
-                checkbox.checked = data.blockerEnabled;
-
-                if (data.blockerEnabled) {
-                    chrome.action.setBadgeText({
-                        text: "ON",
-                    });
-                } else {
-                    chrome.action.setBadgeText({
-                        text: "OFF",
-                    });
-                }
-
-                console.log("Sync'd blocker enabled status");
-            }
-        }
-    });
-})
+    if (changeData.blockerEnabled) {
+        checkbox.checked = changeData.blockerEnabled.newValue;
+    }
+});
 
 //load everything
 window.addEventListener("DOMContentLoaded", () => {
-    chrome.storage.sync.get(["blockedWebsites", "blockerEnabled"], function(data) {
+    chrome.storage.sync.get(function(data) {
         if (data.blockedWebsites) {
             textarea.value = data.blockedWebsites.join("\n");
             console.log("Loaded blocked website list")
@@ -72,9 +53,10 @@ window.addEventListener("DOMContentLoaded", () => {
             console.log("blockedWebsites reset to empty array");
         }
 
-        if (typeof data.blockerEnabled == "boolean") {
+        if (data.blockerEnabled) {
             checkbox.checked = data.blockerEnabled;
             console.log("Loaded blocker enabled status");
+
             if (data.blockerEnabled) {
                 chrome.action.setBadgeText({
                     text: "ON",
@@ -84,9 +66,26 @@ window.addEventListener("DOMContentLoaded", () => {
                     text: "OFF",
                 });
             }
+
         } else {
             chrome.storage.sync.set({ blockerEnabled: false });
             console.log("blockerEnabled reset to false");
         }
     });
 });
+
+//button event
+openFilesButton.addEventListener("click", () => {
+    openFile();
+});
+
+//opens file manager
+async function openFile() {
+    console.log('Opening file manager')
+    const [fileHandle] = await window.showOpenFilePicker();
+
+    const file = await fileHandle.getFile();
+    const contents = await file.text();
+
+    console.log(contents)
+}
