@@ -23,7 +23,7 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo) {
     }
 
     const hostname = new URL(url).hostname;
-    console.log(hostname);
+    console.log("User navigated to: " + hostname);
 
     chrome.storage.sync.get(["blockedWebsites", "blockerEnabled"], function(data) {
         const blocked = data.blockedWebsites;
