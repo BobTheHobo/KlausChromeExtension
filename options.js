@@ -1,6 +1,7 @@
 const textarea = document.getElementById("blockedtextarea");
 const saveButton = document.getElementById("saveButton");
-const checkbox = document.getElementById("checkbox");
+const enableCheckbox = document.getElementById("enableCheckbox");
+const urlOptionChekbox = document.getElementById("urlOptionCheckbox")
 const openFilesButton = document.getElementById("openFiles");
 
 //saves new blocklist to storage
@@ -12,8 +13,8 @@ saveButton.addEventListener("click", () => {
     });
 });
 
-//saves checkbox status to storage, changes checkbox status and badge on input
-checkbox.addEventListener("change", (event) => {
+//saves enableCheckbox status to storage, changes checkbox status and badge on input
+enableCheckbox.addEventListener("change", (event) => {
     const enabled = event.target.checked;
     chrome.storage.sync.set({ "blockerEnabled": enabled });
 
@@ -30,6 +31,13 @@ checkbox.addEventListener("change", (event) => {
     console.log("Enabled turned to " + enabled)
 });
 
+//saves urlOptionCheckbox status to storage
+urlOptionChekbox.addEventListener("change", (event) => {
+    const scanEnabled = event.target.checked;
+    chrome.storage.sync.set({ "scanEnabled": scanEnabled });
+    console.log("Scan entire URL turned to " + scanEnabled)
+});
+
 
 //syncs data across all instances (ie popup and full tab options) of the extension when something changes 
 chrome.storage.onChanged.addListener(changeData => {
@@ -38,7 +46,11 @@ chrome.storage.onChanged.addListener(changeData => {
     }
 
     if (changeData.blockerEnabled) {
-        checkbox.checked = changeData.blockerEnabled.newValue;
+        enableCheckbox.checked = changeData.blockerEnabled.newValue;
+    }
+
+    if (changeData.scanEnabled) {
+        urlOptionChekbox.checked = changeData.scanEnabled.newValue;
     }
 });
 
@@ -53,8 +65,8 @@ window.addEventListener("DOMContentLoaded", () => {
             console.log("blockedWebsites reset to empty array");
         }
 
-        if (data.blockerEnabled) {
-            checkbox.checked = data.blockerEnabled;
+        if (typeof data.blockerEnabled == "boolean") {
+            enableCheckbox.checked = data.blockerEnabled;
             console.log("Loaded blocker enabled status");
 
             if (data.blockerEnabled) {
@@ -70,6 +82,14 @@ window.addEventListener("DOMContentLoaded", () => {
         } else {
             chrome.storage.sync.set({ blockerEnabled: false });
             console.log("blockerEnabled reset to false");
+        }
+
+        if (typeof data.scanEnabled == "boolean") {
+            urlOptionChekbox.checked = data.scanEnabled;
+            console.log("Loaded URL option");
+        } else {
+            chrome.storage.sync.set({ scanEnabled: false });
+            console.log("scanEnabled reset to false");
         }
     });
 });

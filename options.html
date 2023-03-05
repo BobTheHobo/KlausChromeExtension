@@ -8,18 +8,23 @@
 
 <body>
     <h1>Klaus Options</h1>
+    <input id="enableCheckbox" type="checkbox">
+    <label for="enableCheckbox">Enable website blocking</label>
+    <br>
+    <br>
     <form>
         <label for="blockedtextarea">Blocked Websites:</label><br>
         <textarea id="blockedtextarea" name="blockedWebsites" rows="10" cols="50"></textarea><br>
     </form>
-    <input id="checkbox" type="checkbox">
-    <label for="checkbox">Enabled</label>
+    <button id="saveButton" type="button">Save Blocklist</button>
+    <button id="openFiles" type="button">Import Blocklist (NO FUNCTIONALITY)</button>
     <br>
     <br>
-    <button id="openFiles" type="button">Open Files</button>
+    <t>Additional Options:</t>
     <br>
-    <br>
-    <button id="saveButton" type="button">Save</button>
+    <input id="urlOptionCheckbox" type="checkbox">
+    <label for="urlOptionCheckbox">Scan entire URL (blocks upon any mention in URL)</label>
+
 
     <script src="options.js"></script>
 </body>

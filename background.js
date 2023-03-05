@@ -1,9 +1,10 @@
 let enabled = false;
+let scanEnabled = false;
 let blocklist = [];
 
 //runs when extension first installed, updated, or when chrome updated
 chrome.runtime.onInstalled.addListener(() => {
-    chrome.storage.sync.set({ "blockerEnabled": false }); //set blocklist to false when first installed
+    chrome.storage.sync.set({ blockerEnabled: false }); //set blocklist to false when first installed
     chrome.action.setBadgeText({
         text: "OFF", //set badgetext to off
     });
@@ -15,6 +16,8 @@ chrome.runtime.onInstalled.addListener(() => {
         }
         blocklist = data.blockedWebsites;
     });
+
+    chrome.storage.sync.set({ scanEnabled: false }); //set scanEnabled when first installed
 
     console.log("Klaus disabled for first runtime")
 });
@@ -28,18 +31,28 @@ chrome.storage.onChanged.addListener(changeData => {
     if (changeData.blockerEnabled) {
         enabled = changeData.blockerEnabled.newValue;
     }
+
+    if (changeData.scanEnabled) {
+        scanEnabled = changeData.scanEnabled.newValue;
+    }
 });
 
-//onUpdated tab handler
+//hostname tab handler
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
     if (changeInfo.url) {
-        url = changeInfo.url;
-        const hostname = new URL(url).hostname;
-        console.log("User navigated to: " + hostname);
+        let url = new URL(changeInfo.url);
 
-        if (enabled && blocklist.find(domain => hostname.includes(domain))) {
+        if (scanEnabled) { //if scan whole url is enabled...
+            url = url.toString();
+        } else { //else only set the url to the hostname (like twitch.tv vs twitch.tv/sneakylol)
+            url = url.hostname.toString();
+        }
+
+        console.log("User navigated to: " + url);
+
+        if (enabled && blocklist.find(domain => url.includes(domain))) {
             chrome.tabs.remove(tabId);
-            console.log("Klaus blocked " + hostname);
+            console.log("Klaus blocked " + url);
         }
     }
 });
