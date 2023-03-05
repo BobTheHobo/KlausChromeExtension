@@ -44,7 +44,7 @@ chrome.storage.onChanged.addListener(changeData => {
 
 //load everything
 window.addEventListener("DOMContentLoaded", () => {
-    chrome.storage.sync.get(function(data) {
+    chrome.storage.sync.get((data) => {
         if (data.blockedWebsites) {
             textarea.value = data.blockedWebsites.join("\n");
             console.log("Loaded blocked website list")
@@ -53,7 +53,7 @@ window.addEventListener("DOMContentLoaded", () => {
             console.log("blockedWebsites reset to empty array");
         }
 
-        if (data.blockerEnabled) {
+        if (typeof data.blockerEnabled == "boolean") {
             checkbox.checked = data.blockerEnabled;
             console.log("Loaded blocker enabled status");
 
@@ -89,3 +89,13 @@ async function openFile() {
 
     console.log(contents)
 }
+
+/*
+    "declarative_net_request": {
+        "rule_resources": [{
+            "id": "ruleset_1",
+            "enabled": false,
+            "path": "rules.json"
+        }]
+    },
+    */

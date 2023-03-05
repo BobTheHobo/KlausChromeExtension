@@ -10,7 +10,13 @@
     "permissions": [
         "storage",
         "tabs",
-        "scripting"
+        "scripting",
+        "webNavigation",
+        "declarativeNetRequest",
+        "declarativeNetRequestFeedback"
+    ],
+    "host_permissions": [
+        "<all_urls>"
     ],
     "background": {
         "service_worker": "background.js"
