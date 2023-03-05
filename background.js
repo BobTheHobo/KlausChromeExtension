@@ -1,37 +1,45 @@
+let enabled = false;
+let blocklist = [];
+
+//runs when extension first installed, updated, or when chrome updated
 chrome.runtime.onInstalled.addListener(() => {
-    //runs when extension first installed, updated, or when chrome updated
-    chrome.storage.sync.set({ "blockerEnabled": false });
+    chrome.storage.sync.set({ "blockerEnabled": false }); //set blocklist to false when first installed
     chrome.action.setBadgeText({
-        text: "OFF",
+        text: "OFF", //set badgetext to off
     });
 
-    //if blocked websites array wonky, reset
-    chrome.storage.sync.get("blockedWebsites", function(data) {
-        if (!Array.isArray(data.blockedWebsites)) {
-            chrome.storage.local.set({ blockedWebsites: [] });
+    chrome.storage.sync.get(data => { //syncs blockedwebsites
+        if (!Array.isArray(data.blockedWebsites)) { //if blocked websites array wonky, reset
+            chrome.storage.sync.set({ blockedWebsites: [] });
             console.log("Blocked websites array reset on first runtime")
         }
+        blocklist = data.blockedWebsites;
     });
 
     console.log("Klaus disabled for first runtime")
 });
 
-chrome.tabs.onUpdated.addListener(function(tabId, changeInfo) {
-    const url = changeInfo.pendingUrl || changeInfo.url;
-    if (!url || !url.startsWith("http")) {
-        return;
+// Listen for option changes and sync here
+chrome.storage.onChanged.addListener(changeData => {
+    if (changeData.blockedWebsites) {
+        blocklist = changeData.blockedWebsites.newValue;
     }
 
-    const hostname = new URL(url).hostname;
-    console.log("User navigated to: " + hostname);
+    if (changeData.blockerEnabled) {
+        enabled = changeData.blockerEnabled.newValue;
+    }
+});
 
-    chrome.storage.sync.get(["blockedWebsites", "blockerEnabled"], function(data) {
-        const blocked = data.blockedWebsites;
-        const enabled = data.blockerEnabled;
+//onUpdated tab handler
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+    if (changeInfo.url) {
+        url = changeInfo.url;
+        const hostname = new URL(url).hostname;
+        console.log("User navigated to: " + hostname);
 
-        if (Array.isArray(blocked) && enabled && blocked.find(domain => hostname.includes(domain))) {
-            console.log("Klaus blocked " + hostname);
+        if (enabled && blocklist.find(domain => hostname.includes(domain))) {
             chrome.tabs.remove(tabId);
+            console.log("Klaus blocked " + hostname);
         }
-    });
+    }
 });
