@@ -1,3 +1,4 @@
+let port
 let enabled = false;
 let scanEnabled = false;
 let blocklist = [];
@@ -19,8 +20,27 @@ chrome.runtime.onInstalled.addListener(() => {
 
     chrome.storage.sync.set({ scanEnabled: false }); //set scanEnabled when first installed
 
+    connectToNativePort(); //creates a port that's open for the lifetime of extension
+
     console.log("Klaus disabled for first runtime")
 });
+
+function connectToNativePort() {
+    try {
+        port = chrome.runtime.connectNative("msgtest"); //change msgtest to the native app's name defined in app's json manifest
+    } catch (e) {
+        console.log("Error when connecting to native port: " + e)
+    }
+}
+
+// Listen for messages from native app as long as port is still defined
+chrome.runtime.onConnectNative.addListener(() => {
+    if (port != undefined) {
+        port.onMessage.addListener((response) => {
+            console.log(`Received: ${response}`);
+        });
+    }
+})
 
 // Listen for option changes and sync here
 chrome.storage.onChanged.addListener(changeData => {

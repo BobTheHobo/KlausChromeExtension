@@ -10,7 +10,8 @@
     "permissions": [
         "storage",
         "tabs",
-        "scripting"
+        "scripting",
+        "nativeMessaging"
     ],
     "background": {
         "service_worker": "background.js"

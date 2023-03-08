@@ -3,6 +3,33 @@ const saveButton = document.getElementById("saveButton");
 const enableCheckbox = document.getElementById("enableCheckbox");
 const urlOptionChekbox = document.getElementById("urlOptionCheckbox")
 const openFilesButton = document.getElementById("openFiles");
+const testButton = document.getElementById("testButton");
+
+let port
+
+try {
+    //Everytime options.js is run, open a port
+    port = chrome.runtime.connectNative("msgtest"); //change msgtest to the native app's name defined in app's json manifest
+
+    //listens for messages from native app
+    port.onMessage.addListener((response) => {
+        console.log(`Received: ${response}`);
+    });
+
+} catch (e) {
+    console.log("Error connecting to native port: " + e);
+}
+
+//Example for sending a message to native app
+testButton.addEventListener("click", () => {
+    if (port != undefined) {
+        /*
+        Listen for messages from the app.
+        */
+        console.log("Sending:  hello");
+        port.postMessage("hello");
+    }
+});
 
 //saves new blocklist to storage
 saveButton.addEventListener("click", () => {
