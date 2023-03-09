@@ -1,9 +1,9 @@
 {
     "name": "msgtest",
-    "description": "My Application",
-    "path": "/Users/vietmac/PycharmProjects/pythonProject/msgtest.py",
+    "description": "Klaus communication testing app",
+    "path": "INSERT_PATH_HERE",
     "type": "stdio",
     "allowed_origins": [
-        "chrome-extension://pmppggbfnbpicdoichfnopcahflincah/"
+        "chrome-extension://INSERT_EXTENSION_ID_HERE/"
     ]
 }
