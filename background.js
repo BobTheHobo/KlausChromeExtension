@@ -2,6 +2,7 @@ let port
 let enabled = false;
 let scanEnabled = false;
 let blocklist = [];
+let receivedtext = "";
 
 //runs when extension first installed, updated, or when chrome updated
 chrome.runtime.onInstalled.addListener(() => {
@@ -16,6 +17,10 @@ chrome.runtime.onInstalled.addListener(() => {
             console.log("Blocked websites array reset on first runtime")
         }
         blocklist = data.blockedWebsites;
+
+        if (data.receivedtext) {
+            receivedtext = data.receivedtext
+        }
     });
 
     chrome.storage.sync.set({ scanEnabled: false }); //set scanEnabled when first installed
@@ -28,19 +33,17 @@ chrome.runtime.onInstalled.addListener(() => {
 function connectToNativePort() {
     try {
         port = chrome.runtime.connectNative("msgtest"); //change msgtest to the native app's name defined in app's json manifest
+
+        //listens for messages from native app
+        port.onMessage.addListener((response) => {
+            console.log(`Received: ${response}`);
+            chrome.storage.sync.set({ receivedtext: response });
+        });
+
     } catch (e) {
         console.log("Error when connecting to native port: " + e)
     }
 }
-
-// Listen for messages from native app as long as port is still defined
-chrome.runtime.onConnectNative.addListener(() => {
-    if (port != undefined) {
-        port.onMessage.addListener((response) => {
-            console.log(`Received: ${response}`);
-        });
-    }
-})
 
 // Listen for option changes and sync here
 chrome.storage.onChanged.addListener(changeData => {
@@ -54,6 +57,10 @@ chrome.storage.onChanged.addListener(changeData => {
 
     if (changeData.scanEnabled) {
         scanEnabled = changeData.scanEnabled.newValue;
+    }
+
+    if (changeData.receivedtext) {
+        receivedtext = changeData.receivedtext.newValue
     }
 });
 

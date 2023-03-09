@@ -4,6 +4,7 @@ const enableCheckbox = document.getElementById("enableCheckbox");
 const urlOptionChekbox = document.getElementById("urlOptionCheckbox")
 const openFilesButton = document.getElementById("openFiles");
 const testButton = document.getElementById("testButton");
+const receivedtextarea = document.getElementById("receivedTextArea");
 
 let port
 
@@ -14,6 +15,7 @@ try {
     //listens for messages from native app
     port.onMessage.addListener((response) => {
         console.log(`Received: ${response}`);
+        chrome.storage.sync.set({ receivedtext: response });
     });
 
 } catch (e) {
@@ -79,6 +81,10 @@ chrome.storage.onChanged.addListener(changeData => {
     if (changeData.scanEnabled) {
         urlOptionChekbox.checked = changeData.scanEnabled.newValue;
     }
+
+    if (changeData.receivedtext) {
+        receivedtextarea.value = changeData.receivedtext.newValue
+    }
 });
 
 //load everything
@@ -90,6 +96,14 @@ window.addEventListener("DOMContentLoaded", () => {
         } else {
             chrome.storage.sync.set({ blockedWebsites: [] });
             console.log("blockedWebsites reset to empty array");
+        }
+
+        if (data.receivedtext) {
+            receivedtextarea.value = data.receivedtext;
+            console.log("Loaded received website list")
+        } else {
+            chrome.storage.sync.set({ receivedtext: "" });
+            console.log("receivedtext reset to empty string");
         }
 
         if (typeof data.blockerEnabled == "boolean") {

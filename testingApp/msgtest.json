@@ -1,0 +1,9 @@
+{
+    "name": "msgtest",
+    "description": "My Application",
+    "path": "/Users/vietmac/PycharmProjects/pythonProject/msgtest.py",
+    "type": "stdio",
+    "allowed_origins": [
+        "chrome-extension://pmppggbfnbpicdoichfnopcahflincah/"
+    ]
+}
