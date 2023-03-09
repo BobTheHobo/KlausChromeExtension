@@ -1,7 +1,7 @@
 {
     "name": "msgtest",
     "description": "Klaus communication testing app",
-    "path": "INSERT_PATH_HERE",
+    "path": "INSERT_PATH_TO__HERE",
     "type": "stdio",
     "allowed_origins": [
         "chrome-extension://INSERT_EXTENSION_ID_HERE/"
