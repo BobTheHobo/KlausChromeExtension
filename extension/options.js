@@ -1,28 +1,55 @@
 const textarea = document.getElementById("blockedtextarea");
 const saveButton = document.getElementById("saveButton");
 const enableCheckbox = document.getElementById("enableCheckbox");
-const urlOptionChekbox = document.getElementById("urlOptionCheckbox")
+const urlOptionChekbox = document.getElementById("urlOptionCheckbox");
 const openFilesButton = document.getElementById("openFiles");
 const testButton = document.getElementById("testButton");
 const receivedtextarea = document.getElementById("receivedTextArea");
 
-let port
+let port;
+let manifestName;
 
-try {
-    //Everytime options.js is run, open a port
-    port = chrome.runtime.connectNative("msgtest"); //change msgtest to the native app's name defined in app's json manifest
+openNativePort();
 
-    //listens for messages from native app
-    port.onMessage.addListener((response) => {
-        console.log(`Received: ${response}`);
-        chrome.storage.sync.set({ receivedtext: response });
-    });
-
-} catch (e) {
-    console.log("Error connecting to native port: " + e);
+async function openNativePort() {
+    await getManifest();
+    await connectToNativePort();
 }
 
-//Example for sending a message to native app
+async function getManifest() {
+    return new Promise((resolve) => {
+        chrome.storage.sync.get(data => {
+            if (data.manifestName != undefined) {
+                manifestName = data.manifestName
+                resolve();
+            } else {
+                console.log("Error: Manifest not loaded in options")
+                resolve();
+            }
+        });
+    })
+}
+
+async function connectToNativePort() {
+    return new Promise((resolve) => {
+        try {
+            //Everytime options.js is run, open a port
+            port = chrome.runtime.connectNative(manifestName);
+
+            //listens for messages from native app
+            port.onMessage.addListener((response) => {
+                console.log(`Received: ${response}`);
+                chrome.storage.sync.set({ receivedtext: response });
+            });
+
+            resolve();
+        } catch (e) {
+            console.log("Error connecting to native port: " + e);
+            resolve();
+        }
+    })
+}
+
 testButton.addEventListener("click", () => {
     if (port != undefined) {
         /*
