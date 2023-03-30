@@ -1,12 +1,19 @@
 const APPLE_NATIVE_APP_NAME = "klauscommmanagerapple"
 const WIN_NATIVE_APP_NAME = "klauscommmanagerwin"
 
+const PORT_ESTABLISHED_MESSAGE = "PORT_ESTABLISHED"
+const COMM_MANAGER_OPENED_MESSAGE = "COMM_MANAGER_OPENED"
+const REQUEST_BLOCKLIST_MESSAGE = "REQUEST_BLOCKLIST"
+const ENABLE_BLOCKLIST_MESSAGE = "ENABLE_BLOCKLIST"
+const ENABLE_BLOCKLIST_SUCCESSS_MESSAGE = "ENABLE_BLOCKLIST_SUCCESS"
+
 let port
 let manifestName = "";
 let enabled = false;
 let scanEnabled = false;
 let blocklist = [];
 let receivedtext = "";
+
 
 //Testing only variables, set testingActive to true if testing and TESTING_NATIVE_APP_NAME to manifest name
 const TESTING_NATIVE_APP_NAME = ""
@@ -16,10 +23,7 @@ let testingActive = false;
 chrome.runtime.onInstalled.addListener(() => {
     openNativePort();
 
-    chrome.storage.sync.set({ blockerEnabled: false }); //set blocklist to false when first installed
-    chrome.action.setBadgeText({
-        text: "OFF", //set badgetext to off
-    });
+    setBlockerEnabled(false) //set blocklist to false when first installed
 
     chrome.storage.sync.get(data => { //syncs blockedwebsites
         if (!Array.isArray(data.blockedWebsites)) { //if blocked websites array wonky, reset
@@ -37,6 +41,20 @@ chrome.runtime.onInstalled.addListener(() => {
 
     console.log("Klaus disabled for first runtime")
 });
+
+function setBlockerEnabled(blockerEnabled) {
+    chrome.storage.sync.set({ blockerEnabled })
+    if (blockerEnabled == false) {
+        chrome.action.setBadgeText({
+            text: "OFF", //set badgetext to off
+        });
+    } else if (blockerEnabled == true) {
+        chrome.action.setBadgeText({
+            text: "ON", //set badgetext to on
+        });
+    }
+
+}
 
 async function openNativePort() { //initiates correct OS vars then creates a port that's open for the lifetime of extension
     await handleManifest();
@@ -83,10 +101,24 @@ async function connectToNativePort() {
         try {
             port = chrome.runtime.connectNative(manifestName); //klauscommmanagerapple manifestName
 
+            port.postMessage(PORT_ESTABLISHED_MESSAGE)
+
             //listens for messages from native app
             port.onMessage.addListener((response) => {
-                console.log(`Received: ${response}`);
-                chrome.storage.sync.set({ receivedtext: response });
+                if (response == COMM_MANAGER_OPENED_MESSAGE) {
+                    port.postMessage(REQUEST_BLOCKLIST_MESSAGE)
+                }
+
+                if (response.startsWith("BLOCKLIST:")) {
+                    blocklist = response.replace("BLOCKLIST:", "")
+                    console.log(blocklist)
+                }
+
+                if (response == ENABLE_BLOCKLIST_MESSAGE) {
+                    setBlockerEnabled(true)
+                    port.postMessage(ENABLE_BLOCKLIST_SUCCESSS_MESSAGE)
+                    console.log("Blocklist enabled")
+                }
             });
 
             resolve();

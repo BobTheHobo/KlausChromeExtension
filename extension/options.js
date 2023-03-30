@@ -8,6 +8,9 @@ const receivedtextarea = document.getElementById("receivedTextArea");
 
 let port;
 let manifestName;
+let blocklist;
+
+const REQUEST_BLOCKLIST_MESSAGE = "REQUEST_BLOCKLIST"
 
 openNativePort();
 
@@ -36,11 +39,23 @@ async function connectToNativePort() {
             //Everytime options.js is run, open a port
             port = chrome.runtime.connectNative(manifestName);
 
+            port.postMessage(REQUEST_BLOCKLIST_MESSAGE)
+
             //listens for messages from native app
             port.onMessage.addListener((response) => {
+                if (response == "COMM_MANAGER_OPENED") {
+                    port.postMessage("REQUEST_BLOCKLIST")
+                }
+
+                if (response.startsWith("BLOCKLIST:")) {
+                    blocklist = response.replace("BLOCKLIST:", "")
+                    console.log(blocklist)
+                }
+
                 console.log(`Received: ${response}`);
                 chrome.storage.sync.set({ receivedtext: response });
             });
+
 
             resolve();
         } catch (e) {
