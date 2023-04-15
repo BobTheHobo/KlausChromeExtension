@@ -42,20 +42,9 @@ async function connectToNativePort() {
             port.postMessage(REQUEST_BLOCKLIST_MESSAGE)
 
             //listens for messages from native app
-            port.onMessage.addListener((response) => {
-                if (response == "COMM_MANAGER_OPENED") {
-                    port.postMessage("REQUEST_BLOCKLIST")
-                }
+            port.onMessage.addListener(nativeMessageHandler);
 
-                if (response.startsWith("BLOCKLIST:")) {
-                    blocklist = response.replace("BLOCKLIST:", "")
-                    console.log(blocklist)
-                }
-
-                console.log(`Received: ${response}`);
-                chrome.storage.sync.set({ receivedtext: response });
-            });
-
+            port.onDisconnect.addListener(disconnectHandler);
 
             resolve();
         } catch (e) {
@@ -63,6 +52,21 @@ async function connectToNativePort() {
             resolve();
         }
     })
+}
+
+function sendNativeMessage(text) {
+    message = { "text": text };
+    port.postMessage(message)
+}
+
+function nativeMessageHandler(message) {
+    console.log("Received from Options: \n" + message);
+    chrome.storage.sync.set({ receivedtext: message });
+}
+
+function disconnectHandler() {
+    console.log("Options.js port disconnected")
+    port = null
 }
 
 testButton.addEventListener("click", () => {
@@ -134,7 +138,7 @@ window.addEventListener("DOMContentLoaded", () => {
     chrome.storage.sync.get(function(data) {
         if (data.blockedWebsites) {
             textarea.value = data.blockedWebsites.join("\n");
-            console.log("Loaded blocked website list")
+            // console.log("Loaded blocked website list")
         } else {
             chrome.storage.sync.set({ blockedWebsites: [] });
             console.log("blockedWebsites reset to empty array");
@@ -142,7 +146,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
         if (data.receivedtext) {
             receivedtextarea.value = data.receivedtext;
-            console.log("Loaded received website list")
+            // console.log("Loaded received website list")
         } else {
             chrome.storage.sync.set({ receivedtext: "" });
             console.log("receivedtext reset to empty string");
@@ -150,7 +154,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
         if (typeof data.blockerEnabled == "boolean") {
             enableCheckbox.checked = data.blockerEnabled;
-            console.log("Loaded blocker enabled status");
+            // console.log("Loaded blocker enabled status");
 
             if (data.blockerEnabled) {
                 chrome.action.setBadgeText({
@@ -169,7 +173,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
         if (typeof data.scanEnabled == "boolean") {
             urlOptionChekbox.checked = data.scanEnabled;
-            console.log("Loaded URL option");
+            // console.log("Loaded URL option");
         } else {
             chrome.storage.sync.set({ scanEnabled: false });
             console.log("scanEnabled reset to false");

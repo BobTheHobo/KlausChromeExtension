@@ -111,7 +111,7 @@ async function connectToNativePort() {
 
                 if (response.startsWith("BLOCKLIST:")) {
                     blocklist = response.replace("BLOCKLIST:", "")
-                    console.log(blocklist)
+                    console.log("Received blocklist: \n" + blocklist)
                 }
 
                 if (response == ENABLE_BLOCKLIST_MESSAGE) {
