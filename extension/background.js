@@ -6,6 +6,7 @@ const COMM_MANAGER_OPENED_MESSAGE = "COMM_MANAGER_OPENED"
 const REQUEST_BLOCKLIST_MESSAGE = "REQUEST_BLOCKLIST"
 const ENABLE_BLOCKLIST_MESSAGE = "ENABLE_BLOCKLIST"
 const ENABLE_BLOCKLIST_SUCCESSS_MESSAGE = "ENABLE_BLOCKLIST_SUCCESS"
+const GET_EXTENSION_ID = "GET_ID"
 
 let port
 let manifestName = "";
@@ -40,7 +41,16 @@ chrome.runtime.onInstalled.addListener(() => {
     chrome.storage.sync.set({ scanEnabled: false }); //set scanEnabled when first installed
 
     console.log("Klaus disabled for first runtime")
+
+    // chrome.runtime.onMessage.addListener(optionsHandler);
 });
+
+// function optionsHandler(message) {
+//     if (message.action === "runScript") {
+//         // Put your script code here
+//         console.log("Script run from options.js");
+//     }
+// }
 
 function setBlockerEnabled(blockerEnabled) {
     chrome.storage.sync.set({ blockerEnabled })
@@ -103,23 +113,12 @@ async function connectToNativePort() {
 
             port.postMessage(PORT_ESTABLISHED_MESSAGE)
 
+            port.postMessage(GET_EXTENSION_ID + ":" + chrome.runtime.id)
+
             //listens for messages from native app
-            port.onMessage.addListener((response) => {
-                if (response == COMM_MANAGER_OPENED_MESSAGE) {
-                    port.postMessage(REQUEST_BLOCKLIST_MESSAGE)
-                }
+            port.onMessage.addListener(nativeMessageHandler);
 
-                if (response.startsWith("BLOCKLIST:")) {
-                    blocklist = response.replace("BLOCKLIST:", "")
-                    console.log("Received blocklist: \n" + blocklist)
-                }
-
-                if (response == ENABLE_BLOCKLIST_MESSAGE) {
-                    setBlockerEnabled(true)
-                    port.postMessage(ENABLE_BLOCKLIST_SUCCESSS_MESSAGE)
-                    console.log("Blocklist enabled")
-                }
-            });
+            port.onDisconnect.addListener(disconnectHandler);
 
             resolve();
         } catch (e) {
@@ -127,6 +126,46 @@ async function connectToNativePort() {
             resolve();
         }
     })
+}
+
+function nativeMessageHandler(response) {
+    if (chrome.runtime.lastError) {
+        console.warn("Runtime error: " + chrome.runtime.lastError.message); //todo: handle runtime.lasterror
+    } else {
+        if (response == COMM_MANAGER_OPENED_MESSAGE) {
+            port.postMessage(REQUEST_BLOCKLIST_MESSAGE)
+        }
+
+        if (response == "EMPTY_BLOCKLIST") {
+            console.log("Given blocklist is empty")
+        }
+
+        if (response.startsWith("BLOCKLIST:")) {
+            console.log(response)
+            blockliststr = response.trim().replace("BLOCKLIST:", "")
+
+            blocklistlist = blockliststr.split(",")
+
+            chrome.storage.sync.set({ blockedWebsites: blocklistlist });
+            console.log("Received blocklist: \n" + blockliststr)
+        }
+
+        if (response == ENABLE_BLOCKLIST_MESSAGE) {
+            setBlockerEnabled(true)
+            port.postMessage(ENABLE_BLOCKLIST_SUCCESSS_MESSAGE)
+            console.log("Blocklist enabled")
+        }
+
+        if (response == GET_EXTENSION_ID) {
+            port.postMessage(GET_EXTENSION_ID + ":" + chrome.runtime.id)
+        }
+    }
+}
+
+function disconnectHandler() {
+    console.log("Background port disconnected, any errors are printed next:")
+    console.log(chrome.runtime.lastError)
+    port = null
 }
 
 // Listen for option changes and sync here

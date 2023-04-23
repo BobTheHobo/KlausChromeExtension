@@ -10,9 +10,25 @@ let port;
 let manifestName;
 let blocklist;
 
+const PORT_ESTABLISHED_MESSAGE = "PORT_ESTABLISHED"
+const COMM_MANAGER_OPENED_MESSAGE = "COMM_MANAGER_OPENED"
 const REQUEST_BLOCKLIST_MESSAGE = "REQUEST_BLOCKLIST"
 
-openNativePort();
+main()
+
+function main() {
+    openNativePort();
+
+    // openSelfPort();
+}
+
+// function openSelfPort() {
+//     try {
+//         chrome.runtime.connect()
+//     } catch (e) {
+//         console.log("Error connecting to self port: " + e);
+//     }
+// }
 
 async function openNativePort() {
     await getManifest();
@@ -39,7 +55,7 @@ async function connectToNativePort() {
             //Everytime options.js is run, open a port
             port = chrome.runtime.connectNative(manifestName);
 
-            port.postMessage(REQUEST_BLOCKLIST_MESSAGE)
+            port.postMessage(PORT_ESTABLISHED_MESSAGE)
 
             //listens for messages from native app
             port.onMessage.addListener(nativeMessageHandler);
@@ -59,13 +75,39 @@ function sendNativeMessage(text) {
     port.postMessage(message)
 }
 
-function nativeMessageHandler(message) {
-    console.log("Received from Options: \n" + message);
-    chrome.storage.sync.set({ receivedtext: message });
+function nativeMessageHandler(response) {
+    let blockliststr
+    let blocklistlist
+
+    if (chrome.runtime.lastError) {
+        console.warn("Runtime error: " + chrome.runtime.lastError.message); //todo: handle runtime.lasterror
+    } else {
+        if (response == COMM_MANAGER_OPENED_MESSAGE) {
+            port.postMessage(REQUEST_BLOCKLIST_MESSAGE)
+        }
+
+        if (response == "EMPTY_BLOCKLIST") {
+            console.log("Given blocklist is empty")
+        }
+
+        if (response.startsWith("BLOCKLIST:")) {
+            console.log(response)
+            blockliststr = response.trim().replace("BLOCKLIST:", "")
+
+            blocklistlist = blockliststr.split(",")
+
+            chrome.storage.sync.set({ blockedWebsites: blocklistlist });
+            console.log("Received blocklist: \n" + blockliststr)
+        }
+
+        console.log("Received from Options: \n" + response);
+        chrome.storage.sync.set({ receivedtext: response });
+    }
 }
 
 function disconnectHandler() {
-    console.log("Options.js port disconnected")
+    console.log("Background port disconnected, any errors are printed next:")
+    console.log(chrome.runtime.lastError)
     port = null
 }
 
