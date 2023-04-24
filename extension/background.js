@@ -42,15 +42,36 @@ chrome.runtime.onInstalled.addListener(() => {
 
     console.log("Klaus disabled for first runtime")
 
-    // chrome.runtime.onMessage.addListener(optionsHandler);
+    chrome.runtime.onMessage.addListener(optionsHandler);
 });
 
-// function optionsHandler(message) {
-//     if (message.action === "runScript") {
-//         // Put your script code here
-//         console.log("Script run from options.js");
-//     }
-// }
+function optionsHandler(object, sender, sendResponse) {
+    //sanitize input for security
+    for (const key in object) {
+        object[key] = sanitizeInput(object[key])
+    }
+
+    // 2. A content script sent a message, respond acknowledgement
+    if (object.action === "refreshBlocklist") {
+        requestBlocklist();
+
+        sendResponse("Blocklist requested")
+    }
+
+    if (object.action == "sendToNative") {
+        port.postMessage(object.message)
+
+        sendResponse("Message \"" + object.message + "\" sent")
+    }
+}
+
+function requestBlocklist() {
+    port.postMessage(REQUEST_BLOCKLIST_MESSAGE)
+}
+
+function sanitizeInput(input) {
+    return input.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+}
 
 function setBlockerEnabled(blockerEnabled) {
     chrome.storage.sync.set({ blockerEnabled })
@@ -133,7 +154,7 @@ function nativeMessageHandler(response) {
         console.warn("Runtime error: " + chrome.runtime.lastError.message); //todo: handle runtime.lasterror
     } else {
         if (response == COMM_MANAGER_OPENED_MESSAGE) {
-            port.postMessage(REQUEST_BLOCKLIST_MESSAGE)
+            requestBlocklist();
         }
 
         if (response == "EMPTY_BLOCKLIST") {
@@ -141,7 +162,6 @@ function nativeMessageHandler(response) {
         }
 
         if (response.startsWith("BLOCKLIST:")) {
-            console.log(response)
             blockliststr = response.trim().replace("BLOCKLIST:", "")
 
             blocklistlist = blockliststr.split(",")
@@ -159,6 +179,8 @@ function nativeMessageHandler(response) {
         if (response == GET_EXTENSION_ID) {
             port.postMessage(GET_EXTENSION_ID + ":" + chrome.runtime.id)
         }
+
+        chrome.storage.sync.set({ receivedtext: response });
     }
 }
 
