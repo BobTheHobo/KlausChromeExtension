@@ -59,14 +59,14 @@ function optionsHandler(object, sender, sendResponse) {
     }
 
     if (object.action == "sendToNative") {
-        port.postMessage(object.message)
+        postToNative(object.message)
 
         sendResponse("Message \"" + object.message + "\" sent")
     }
 }
 
 function requestBlocklist() {
-    port.postMessage(REQUEST_BLOCKLIST_MESSAGE)
+    postToNative(REQUEST_BLOCKLIST_MESSAGE)
 }
 
 function sanitizeInput(input) {
@@ -84,7 +84,6 @@ function setBlockerEnabled(blockerEnabled) {
             text: "ON", //set badgetext to on
         });
     }
-
 }
 
 async function openNativePort() { //initiates correct OS vars then creates a port that's open for the lifetime of extension
@@ -132,9 +131,9 @@ async function connectToNativePort() {
         try {
             port = chrome.runtime.connectNative(manifestName); //klauscommmanagerapple manifestName
 
-            port.postMessage(PORT_ESTABLISHED_MESSAGE)
+            postToNative(PORT_ESTABLISHED_MESSAGE)
 
-            port.postMessage(GET_EXTENSION_ID + ":" + chrome.runtime.id)
+            postToNative(GET_EXTENSION_ID + ":" + chrome.runtime.id)
 
             //listens for messages from native app
             port.onMessage.addListener(nativeMessageHandler);
@@ -147,6 +146,13 @@ async function connectToNativePort() {
             resolve();
         }
     })
+}
+
+async function postToNative(message) {
+    if (port == undefined) {
+        await openNativePort()
+    }
+    port.postMessage(message)
 }
 
 function nativeMessageHandler(response) {
@@ -172,12 +178,12 @@ function nativeMessageHandler(response) {
 
         if (response == ENABLE_BLOCKLIST_MESSAGE) {
             setBlockerEnabled(true)
-            port.postMessage(ENABLE_BLOCKLIST_SUCCESSS_MESSAGE)
+            postToNative(ENABLE_BLOCKLIST_SUCCESSS_MESSAGE)
             console.log("Blocklist enabled")
         }
 
         if (response == GET_EXTENSION_ID) {
-            port.postMessage(GET_EXTENSION_ID + ":" + chrome.runtime.id)
+            postToNative(GET_EXTENSION_ID + ":" + chrome.runtime.id)
         }
 
         chrome.storage.sync.set({ receivedtext: response });
