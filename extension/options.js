@@ -5,6 +5,7 @@ const urlOptionChekbox = document.getElementById("urlOptionCheckbox");
 const openFilesButton = document.getElementById("openFiles");
 const testButton = document.getElementById("testButton");
 const receivedtextarea = document.getElementById("receivedTextArea");
+const openKlausButton = document.getElementById("openKlausButton")
 
 main()
 
@@ -28,10 +29,18 @@ function refreshBlocklist() {
     sendMessageToBackground('refreshBlocklist', '')
 }
 
+function openNativeKlaus() {
+    sendMessageToBackground('openNative', '')
+}
+
 testButton.addEventListener("click", () => {
     console.log("Sending:  hello");
     sendNativeMessage("hello")
 });
+
+openKlausButton.addEventListener("click", () => {
+    openNativeKlaus()
+})
 
 //saves new blocklist to storage
 saveButton.addEventListener("click", () => {

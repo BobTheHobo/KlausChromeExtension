@@ -5,7 +5,9 @@ const PORT_ESTABLISHED_MESSAGE = "PORT_ESTABLISHED"
 const COMM_MANAGER_OPENED_MESSAGE = "COMM_MANAGER_OPENED"
 const REQUEST_BLOCKLIST_MESSAGE = "REQUEST_BLOCKLIST"
 const ENABLE_BLOCKLIST_MESSAGE = "ENABLE_BLOCKLIST"
-const ENABLE_BLOCKLIST_SUCCESSS_MESSAGE = "ENABLE_BLOCKLIST_SUCCESS"
+const ENABLE_BLOCKLIST_SUCCESS_MESSAGE = "ENABLE_BLOCKLIST_SUCCESS"
+const OPEN_KLAUS_MESSAGE = "OPEN_KLAUS"
+
 const GET_EXTENSION_ID = "GET_ID"
 
 let port
@@ -63,6 +65,12 @@ function optionsHandler(object, sender, sendResponse) {
 
         sendResponse("Message \"" + object.message + "\" sent")
     }
+
+    if (object.action == "openNative") {
+        postToNative(OPEN_KLAUS_MESSAGE)
+
+        sendResponse("Message to open Klaus sent")
+    }
 }
 
 function requestBlocklist() {
@@ -71,6 +79,10 @@ function requestBlocklist() {
 
 function sanitizeInput(input) {
     return input.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+}
+
+function openNativeKlaus() {
+    postToNative(OPEN_KLAUS_MESSAGE)
 }
 
 function setBlockerEnabled(blockerEnabled) {
@@ -178,7 +190,7 @@ function nativeMessageHandler(response) {
 
         if (response == ENABLE_BLOCKLIST_MESSAGE) {
             setBlockerEnabled(true)
-            postToNative(ENABLE_BLOCKLIST_SUCCESSS_MESSAGE)
+            postToNative(ENABLE_BLOCKLIST_SUCCESS_MESSAGE)
             console.log("Blocklist enabled")
         }
 
