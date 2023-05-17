@@ -10,75 +10,94 @@ const OPEN_KLAUS_MESSAGE = "OPEN_KLAUS"
 
 const GET_EXTENSION_ID = "GET_ID"
 
-let port
+let nativeCommunicationPort
 let manifestName = "";
-let enabled = false;
-let scanEnabled = false;
-let blocklist = [];
-let receivedtext = "";
-
+let blockerEnabled = false;
+let scanEntireUrl = false;
+let websiteBlocklist = [];
+let receivedTextFromNativeApp = "";
 
 //Testing only variables, set testingActive to true if testing and TESTING_NATIVE_APP_NAME to manifest name
 const TESTING_NATIVE_APP_NAME = ""
 let testingActive = false;
 
-//runs when extension first installed, updated, or when chrome updated
-chrome.runtime.onInstalled.addListener(() => {
+main()
+
+function main() {
+    //runs when extension first installed, updated, or when chrome updated
+    chrome.runtime.onInstalled.addListener(onInstallAndUpdate);
+
+    // Listen for option changes and sync here
+    chrome.storage.onChanged.addListener(changeData => changeDataListener(changeData));
+    chrome.tabs.onUpdated.addListener((tabId, changeInfo) => tabsUpdatedListener(tabId, changeInfo));
+}
+
+function onInstallAndUpdate() {
     openNativePort();
 
-    setBlockerEnabled(false) //set blocklist to false when first installed
+    setBlockerEnabled(false)
 
-    chrome.storage.sync.get(data => { //syncs blockedwebsites
-        if (!Array.isArray(data.blockedWebsites)) { //if blocked websites array wonky, reset
-            chrome.storage.sync.set({ blockedWebsites: [] });
-            console.log("Blocked websites array reset on first runtime")
-        }
-        blocklist = data.blockedWebsites;
+    chrome.storage.sync.get(chromeSyncStorageData => chromeStorageUpdater(chromeSyncStorageData))
 
-        if (data.receivedtext) {
-            receivedtext = data.receivedtext
-        }
-    });
+    chrome.runtime.onMessage.addListener(communicationFromOptionsScriptHandler) //adds listener to messages from options.js
+}
 
-    chrome.storage.sync.set({ scanEnabled: false }); //set scanEnabled when first installed
-
-    console.log("Klaus disabled for first runtime")
-
-    chrome.runtime.onMessage.addListener(optionsHandler);
-});
-
-function optionsHandler(object, sender, sendResponse) {
-    //sanitize input for security
-    for (const key in object) {
-        object[key] = sanitizeInput(object[key])
+function chromeStorageUpdater(chromeSyncStorageData) {
+    if (!Array.isArray(chromeSyncStorageData.blockedWebsites)) { //if blocked websites array wonky, reset
+        chrome.storage.sync.set({ blockedWebsites: [] });
+        console.log("Blocked websites array reset on first runtime")
     }
+
+    websiteBlocklist = chromeSyncStorageData.blockedWebsites;
+
+    if (chromeSyncStorageData.receivedTextFromNativeApp) {
+        receivedTextFromNativeApp = chromeSyncStorageData.receivedTextFromNativeApp
+    }
+
+    chrome.storage.sync.set({ scanEntireUrl: false }); //set scanEntireUrl when first installed
+}
+
+function communicationFromOptionsScriptHandler(messageObject, sender, sendResponse) {
+    //sanitize input for security
+    sanitizedMessageObject = sanitizeInput(messageObject)
 
     // 2. A content script sent a message, respond acknowledgement
-    if (object.action === "refreshBlocklist") {
-        requestBlocklist();
+    switch(sanitizedMessageObject.action) {
+        case "refreshBlocklistFromNative":
+            requestBlocklistFromNative();
 
-        sendResponse("Blocklist requested")
-    }
+            sendResponse("Website blocklist requested from Native Klaus")
+            break;
+        case "sendToNative":
+            postToNative(sanitizedMessageObject.message)
 
-    if (object.action == "sendToNative") {
-        postToNative(object.message)
+            sendResponse("Message \"" + sanitizedMessageObject.message + "\" sent to Native Klaus")
+            break;
+        case "openNative":
+            postToNative(OPEN_KLAUS_MESSAGE)
 
-        sendResponse("Message \"" + object.message + "\" sent")
-    }
+            sendResponse("Message to open Klaus sent to Native Klaus")
+            break;
+        case "sendNewBlocklist":
+            postToNative()
 
-    if (object.action == "openNative") {
-        postToNative(OPEN_KLAUS_MESSAGE)
-
-        sendResponse("Message to open Klaus sent")
+            sendResponse("New blocklist sent to Native Klaus")
+            break;
     }
 }
 
-function requestBlocklist() {
+function requestBlocklistFromNative() {
     postToNative(REQUEST_BLOCKLIST_MESSAGE)
 }
 
-function sanitizeInput(input) {
-    return input.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+function sanitizeInput(messageObject) {
+    for (const key in messageObject) {
+        messageObject[key] = messageObject[key].replace(/&/g, '&amp;')
+        messageObject[key] = messageObject[key].replace(/</g, '&lt;')
+        messageObject[key] = messageObject[key].replace(/"/g, '&quot;')
+    }
+
+    return messageObject;
 }
 
 function openNativeKlaus() {
@@ -99,150 +118,149 @@ function setBlockerEnabled(blockerEnabled) {
 }
 
 async function openNativePort() { //initiates correct OS vars then creates a port that's open for the lifetime of extension
-    await handleManifest();
-    await connectToNativePort();
+    manifestName = await setManifestName()
+    await connectToNativePort(manifestName);
 }
 
-async function handleManifest() {
-    return new Promise((resolve) => {
-        chrome.runtime.getPlatformInfo(function(info) {
-            switch (info.os) {
-                case "mac": //Mac
-                    manifestName = APPLE_NATIVE_APP_NAME;
-                    break;
-                case "win": //Windows
-                    manifestName = WIN_NATIVE_APP_NAME;
-                    break;
-                case "android":
+async function setManifestName(userOS) {
+    let manifestName = ""
 
-                    break;
-                case "cros": //Chrome OS
+    platformInfo = await chrome.runtime.getPlatformInfo()
+    userOS = platformInfo.os
 
-                    break;
-                case "linux":
+    switch (userOS) {
+        case "mac": //Mac
+            manifestName = APPLE_NATIVE_APP_NAME;
+            break;
+        case "win": //Windows
+            manifestName = WIN_NATIVE_APP_NAME;
+            break;
+        case "android":
 
-                    break;
-                default:
-                    console.log("OS not recognized");
-            }
+            break;
+        case "cros": //Chrome OS
 
-            if (testingActive) {
-                console.log("Testing manifest loaded")
-                manifestName = TESTING_NATIVE_APP_NAME;
-            }
+            break;
+        case "linux":
 
-            chrome.storage.sync.set({ manifestName: manifestName });
-            resolve();
-        });
-    })
+            break;
+        default:
+            console.log("OS not recognized");
+    }
+
+    if (testingActive) {
+        console.log("Testing manifest loaded")
+        manifestName = TESTING_NATIVE_APP_NAME;
+    }
+
+    return manifestName
 }
 
 
-async function connectToNativePort() {
-    return new Promise((resolve) => {
-        try {
-            port = chrome.runtime.connectNative(manifestName); //klauscommmanagerapple manifestName
+async function connectToNativePort(manifestName) {
+    try {
+        nativeCommunicationPort = chrome.runtime.connectNative(manifestName); //klauscommmanagerapple manifestName
 
-            postToNative(PORT_ESTABLISHED_MESSAGE)
+        postToNative(PORT_ESTABLISHED_MESSAGE)
 
-            postToNative(GET_EXTENSION_ID + ":" + chrome.runtime.id)
+        postToNative(GET_EXTENSION_ID + ":" + chrome.runtime.id)
 
-            //listens for messages from native app
-            port.onMessage.addListener(nativeMessageHandler);
+        //listens for messages from native app
+        nativeCommunicationPort.onMessage.addListener(responseFromNative => nativeMessageHandler(responseFromNative));
 
-            port.onDisconnect.addListener(disconnectHandler);
-
-            resolve();
-        } catch (e) {
-            console.log("Error when connecting to native port: " + e)
-            resolve();
-        }
-    })
+        nativeCommunicationPort.onDisconnect.addListener(nativePortDisconnectHandler);
+    } catch (e) {
+        console.error("Error when connecting to native port: " + e)
+    }
 }
 
 async function postToNative(message) {
-    if (port == undefined) {
+    if (nativeCommunicationPort == undefined) {
         await openNativePort()
     }
-    port.postMessage(message)
+    nativeCommunicationPort.postMessage(message)
 }
 
-function nativeMessageHandler(response) {
+function nativeMessageHandler(responseFromNative) {
     if (chrome.runtime.lastError) {
-        console.warn("Runtime error: " + chrome.runtime.lastError.message); //todo: handle runtime.lasterror
+        console.error("Runtime error: " + chrome.runtime.lastError.message); //todo: handle runtime.lasterror
+        return
+    }
+
+    if (responseFromNative == COMM_MANAGER_OPENED_MESSAGE) {
+        requestBlocklistFromNative();
+    }
+
+    if (responseFromNative == "EMPTY_BLOCKLIST") {
+        console.log("Given blocklist is empty")
+    }
+
+    if (responseFromNative.startsWith("BLOCKLIST:")) {
+        blockliststr = response.trim().replace("BLOCKLIST:", "")
+
+        blocklistlist = blockliststr.split(",")
+
+        chrome.storage.sync.set({ blockedWebsites: blocklistlist });
+        console.log("Received blocklist: \n" + blockliststr)
+    }
+
+    if (responseFromNative == ENABLE_BLOCKLIST_MESSAGE) {
+        setBlockerEnabled(true)
+        postToNative(ENABLE_BLOCKLIST_SUCCESS_MESSAGE)
+        console.log("Blocklist enabled")
+    }
+
+    if (responseFromNative == GET_EXTENSION_ID) {
+        postToNative(GET_EXTENSION_ID + ":" + chrome.runtime.id)
+    }
+
+    chrome.storage.sync.set({ receivedTextFromNativeApp: responseFromNative });
+}
+
+function nativePortDisconnectHandler() {
+    console.log("Communication port between Native and Extension disconnected, any errors are printed next:")
+    console.error(chrome.runtime.lastError)
+    nativeCommunicationPort = null
+}
+
+function tabsUpdatedListener(tabId, changeInfo) {
+    if(!changeInfo.url){
+        return
+    }
+
+    let url = new URL(changeInfo.url);
+    console.log("User navigated to: " + url);
+
+    if(!blockerEnabled){
+        return
+    }
+
+    if(scanEntireUrl) {
+        url = url.toString()
     } else {
-        if (response == COMM_MANAGER_OPENED_MESSAGE) {
-            requestBlocklist();
-        }
+        url = url.hostname.toString();
+    }
 
-        if (response == "EMPTY_BLOCKLIST") {
-            console.log("Given blocklist is empty")
-        }
-
-        if (response.startsWith("BLOCKLIST:")) {
-            blockliststr = response.trim().replace("BLOCKLIST:", "")
-
-            blocklistlist = blockliststr.split(",")
-
-            chrome.storage.sync.set({ blockedWebsites: blocklistlist });
-            console.log("Received blocklist: \n" + blockliststr)
-        }
-
-        if (response == ENABLE_BLOCKLIST_MESSAGE) {
-            setBlockerEnabled(true)
-            postToNative(ENABLE_BLOCKLIST_SUCCESS_MESSAGE)
-            console.log("Blocklist enabled")
-        }
-
-        if (response == GET_EXTENSION_ID) {
-            postToNative(GET_EXTENSION_ID + ":" + chrome.runtime.id)
-        }
-
-        chrome.storage.sync.set({ receivedtext: response });
+    if (websiteBlocklist.find(domain => url.includes(domain))) { //Sees if the url has been blocked
+        chrome.tabs.remove(tabId);
+        console.log("Klaus blocked " + url);
     }
 }
 
-function disconnectHandler() {
-    console.log("Background port disconnected, any errors are printed next:")
-    console.log(chrome.runtime.lastError)
-    port = null
-}
-
-// Listen for option changes and sync here
-chrome.storage.onChanged.addListener(changeData => {
+function changeDataListener(changeData) {
     if (changeData.blockedWebsites) {
-        blocklist = changeData.blockedWebsites.newValue;
+        websiteBlocklist = changeData.blockedWebsites.newValue;
     }
 
     if (changeData.blockerEnabled) {
-        enabled = changeData.blockerEnabled.newValue;
+        blockerEnabled = changeData.blockerEnabled.newValue;
     }
 
-    if (changeData.scanEnabled) {
-        scanEnabled = changeData.scanEnabled.newValue;
+    if (changeData.scanEntireUrl) {
+        scanEntireUrl = changeData.scanEntireUrl.newValue;
     }
 
-    if (changeData.receivedtext) {
-        receivedtext = changeData.receivedtext.newValue
+    if (changeData.receivedTextFromNativeApp) {
+        receivedTextFromNativeApp = changeData.receivedTextFromNativeApp.newValue
     }
-});
-
-//hostname tab handler
-chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-    if (changeInfo.url) {
-        let url = new URL(changeInfo.url);
-
-        if (scanEnabled) { //if scan whole url is enabled...
-            url = url.toString();
-        } else { //else only set the url to the hostname (like twitch.tv vs twitch.tv/sneakylol)
-            url = url.hostname.toString();
-        }
-
-        console.log("User navigated to: " + url);
-
-        if (enabled && blocklist.find(domain => url.includes(domain))) {
-            chrome.tabs.remove(tabId);
-            console.log("Klaus blocked " + url);
-        }
-    }
-});
+}

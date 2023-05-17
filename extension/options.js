@@ -1,16 +1,28 @@
-const textarea = document.getElementById("blockedtextarea");
-const saveButton = document.getElementById("saveButton");
-const enableCheckbox = document.getElementById("enableCheckbox");
-const urlOptionChekbox = document.getElementById("urlOptionCheckbox");
-const openFilesButton = document.getElementById("openFiles");
+const blockedWebsitesTextArea = document.getElementById("blockedWebsitesTextArea");
+const saveBlocklistButton = document.getElementById("saveBlocklistButton");
+const enableWebsiteBlockingCheckbox = document.getElementById("enableWebsiteBlockingCheckbox");
+const urlOptionChekbox = document.getElementById("scanEntireUrlCheckbox");
+const openFilesButton = document.getElementById("openFilesButton");
 const testButton = document.getElementById("testButton");
-const receivedtextarea = document.getElementById("receivedTextArea");
+const receivedFromNativeAppTextArea = document.getElementById("receivedFromNativeAppTextArea");
 const openKlausButton = document.getElementById("openKlausButton")
 
 main()
 
 function main() {
-    refreshBlocklist(); //updates blocklist when the options popup/page is opened
+    refreshBlocklistFromNative(); //updates blocklist when the options popup/page is opened
+
+    saveBlocklistButton.addEventListener("click", saveBlocklist);
+    testButton.addEventListener("click", testEvent);
+    openKlausButton.addEventListener("click", openNativeKlaus);
+    openFilesButton.addEventListener("click", openFile);
+
+    enableWebsiteBlockingCheckbox.addEventListener("change", event => websiteBlockingEventHandler(event));
+    scanEntireUrlCheckbox.addEventListener("change", event => scanEntireUrlEventListener(event));
+
+    chrome.storage.onChanged.addListener(storageChangeData => storageChangeHandler(storageChangeData));
+
+    window.addEventListener("DOMContentLoaded", loadAllDataFromChromeStorage);
 }
 
 // 1. Send a message to the background
@@ -21,41 +33,44 @@ async function sendMessageToBackground(action, message) {
     )
 }
 
-function sendNativeMessage(message) {
+function sendMessageToNative(message) {
     sendMessageToBackground('sendToNative', message)
 }
 
-function refreshBlocklist() {
-    sendMessageToBackground('refreshBlocklist', '')
+function refreshBlocklistFromNative() {
+    sendMessageToBackground('refreshBlocklistFromNative', '')
 }
 
 function openNativeKlaus() {
     sendMessageToBackground('openNative', '')
 }
 
-testButton.addEventListener("click", () => {
+function testEvent() {
     console.log("Sending:  hello");
-    sendNativeMessage("hello")
-});
+    sendMessageToNative("hello")
+}
 
-openKlausButton.addEventListener("click", () => {
-    openNativeKlaus()
-})
-
-//saves new blocklist to storage
-saveButton.addEventListener("click", () => {
-    const blocked = textarea.value.split("\n").map(s => s.trim()).filter(Boolean);
+function saveBlocklist() {
+    const blocked = blockedWebsitesTextArea.value.split("\n").map(s => s.trim()).filter(Boolean);
     chrome.storage.sync.set({ "blockedWebsites": blocked }, () => {
         alert("Blocked websites saved")
         console.log("Blocked websites saved")
+        // sendMessageToBackground('sendNewBlocklist', '') TODO: FIGURE OUT WHY THIS CAUSES NATIVE PORT TO EXIT
     });
-});
+}
 
-//saves enableCheckbox status to storage, changes checkbox status and badge on input
-enableCheckbox.addEventListener("change", (event) => {
-    const enabled = event.target.checked;
-    chrome.storage.sync.set({ "blockerEnabled": enabled });
+//saves enableWebsiteBlockingCheckbox status to storage, changes checkbox status and badge on input
+function websiteBlockingEventHandler(event) {
+    const blockerEnabled = event.target.checked;
 
+    chrome.storage.sync.set({ "blockerEnabled": blockerEnabled });
+
+    setBlockerBadgeEnabled(blockerEnabled)
+
+    console.log("Enabled turned to " + blockerEnabled)
+}
+
+function setBlockerBadgeEnabled(enabled) {
     if (enabled) {
         chrome.action.setBadgeText({
             text: "ON",
@@ -65,89 +80,78 @@ enableCheckbox.addEventListener("change", (event) => {
             text: "OFF",
         });
     }
+}
 
-    console.log("Enabled turned to " + enabled)
-});
-
-//saves urlOptionCheckbox status to storage
-urlOptionChekbox.addEventListener("change", (event) => {
-    const scanEnabled = event.target.checked;
-    chrome.storage.sync.set({ "scanEnabled": scanEnabled });
-    console.log("Scan entire URL turned to " + scanEnabled)
-});
-
+function scanEntireUrlEventListener(event) {
+    const scanEntireUrl = event.target.checked;
+    chrome.storage.sync.set({ "scanEntireUrl": scanEntireUrl });
+    console.log("Scan entire URL turned to " + scanEntireUrl)
+}
 
 //syncs data across all instances (ie popup and full tab options) of the extension when something changes 
-chrome.storage.onChanged.addListener(changeData => {
-    if (changeData.blockedWebsites) {
-        textarea.value = changeData.blockedWebsites.newValue.join("\n");
+function storageChangeHandler(storageChangeData) {
+    if (storageChangeData.blockedWebsites) {
+        blockedWebsitesTextArea.value = storageChangeData.blockedWebsites.newValue.join("\n");
     }
 
-    if (changeData.blockerEnabled) {
-        enableCheckbox.checked = changeData.blockerEnabled.newValue;
+    if (storageChangeData.blockerEnabled) {
+        enableWebsiteBlockingCheckbox.checked = storageChangeData.blockerEnabled.newValue;
     }
 
-    if (changeData.scanEnabled) {
-        urlOptionChekbox.checked = changeData.scanEnabled.newValue;
+    if (storageChangeData.scanEntireUrl) {
+        urlOptionChekbox.checked = storageChangeData.scanEntireUrl.newValue;
     }
 
-    if (changeData.receivedtext) {
-        receivedtextarea.value = changeData.receivedtext.newValue
+    if (storageChangeData.receivedTextFromNativeApp) {
+        receivedFromNativeAppTextArea.value = storageChangeData.receivedTextFromNativeApp.newValue
     }
-});
+}
 
-//load everything
-window.addEventListener("DOMContentLoaded", () => {
-    chrome.storage.sync.get(function(data) {
-        if (data.blockedWebsites) {
-            textarea.value = data.blockedWebsites.join("\n");
-            // console.log("Loaded blocked website list")
-        } else {
-            chrome.storage.sync.set({ blockedWebsites: [] });
-            console.log("blockedWebsites reset to empty array");
-        }
-
-        if (data.receivedtext) {
-            receivedtextarea.value = data.receivedtext;
-            // console.log("Loaded received website list")
-        } else {
-            chrome.storage.sync.set({ receivedtext: "" });
-            console.log("receivedtext reset to empty string");
-        }
-
-        if (typeof data.blockerEnabled == "boolean") {
-            enableCheckbox.checked = data.blockerEnabled;
-            // console.log("Loaded blocker enabled status");
-
-            if (data.blockerEnabled) {
-                chrome.action.setBadgeText({
-                    text: "ON",
-                });
-            } else {
-                chrome.action.setBadgeText({
-                    text: "OFF",
-                });
-            }
-
-        } else {
-            chrome.storage.sync.set({ blockerEnabled: false });
-            console.log("blockerEnabled reset to false");
-        }
-
-        if (typeof data.scanEnabled == "boolean") {
-            urlOptionChekbox.checked = data.scanEnabled;
-            // console.log("Loaded URL option");
-        } else {
-            chrome.storage.sync.set({ scanEnabled: false });
-            console.log("scanEnabled reset to false");
-        }
+function loadAllDataFromChromeStorage() {
+    chrome.storage.sync.get((storageData) => {
+        updateBlockedWebsites(storageData);
+        updateReceivedTextFromNativeApp(storageData);
+        updateBlockerEnabled(storageData);
+        updateScanEntireUrl(storageData);
     });
-});
+}
 
-//button event
-openFilesButton.addEventListener("click", () => {
-    openFile();
-});
+function updateBlockedWebsites(storageData) {
+    if (storageData.blockedWebsites) {
+        blockedWebsitesTextArea.value = storageData.blockedWebsites.join("\n");
+    } else {
+        chrome.storage.sync.set({ blockedWebsites: [] });
+        console.log("blockedWebsites reset to empty array");
+    }
+}
+
+function updateReceivedTextFromNativeApp(storageData) {
+    if (storageData.receivedTextFromNativeApp) {
+        receivedFromNativeAppTextArea.value = storageData.receivedTextFromNativeApp;
+    } else {
+        chrome.storage.sync.set({ receivedTextFromNativeApp: "" });
+        console.log("receivedTextFromNativeApp reset to empty string");
+    }
+}
+
+function updateBlockerEnabled(storageData) {
+    if (typeof storageData.blockerEnabled === "boolean") {
+        enableWebsiteBlockingCheckbox.checked = storageData.blockerEnabled;
+        setBlockerBadgeEnabled(storageData.blockerEnabled);
+    } else {
+        chrome.storage.sync.set({ blockerEnabled: false });
+        console.log("blockerEnabled reset to false");
+    }
+}
+
+function updateScanEntireUrl(storageData) {
+    if (typeof storageData.scanEntireUrl === "boolean") {
+        scanEntireUrlCheckbox.checked = storageData.scanEntireUrl;
+    } else {
+        chrome.storage.sync.set({ scanEntireUrl: false });
+        console.log("scanEntireUrl reset to false");
+    }
+}
 
 //opens file manager
 async function openFile() {
