@@ -8,8 +8,23 @@
 
 <body>
     <h1>Klaus Options</h1>
+
+    <h2>General</h2>
+    
     <input id="enableWebsiteBlockingCheckbox" type="checkbox">
     <label for="enableWebsiteBlockingCheckbox">Enable website blocking</label>
+    <br>
+    <br>
+    <input id="enableWebsiteTrackingCheckbox" type="checkbox">
+    <label for="enableWebsiteTrackingCheckbox">Enable website tracking</label>
+    <br>
+    <br>
+    <input id="openKlausOnNewTabCheckbox" type="checkbox">
+    <label for="openKlausOnNewTabCheckbox">Open Klaus homepage on new tab</label>
+    <br>
+    <br>
+    <input id="nativeKlausIntegrationsCheckbox" type="checkbox">
+    <label for="nativeKlausIntegrationsCheckbox">Enable native Klaus integrations (UNSTABLE)</label>
     <br>
     <br>
     <form>
@@ -31,13 +46,14 @@
     <br>
     <form>
         <label for="receivedFromNativeAppTextArea">Received Blocked Websites:</label><br>
-        <textarea id="receivedFromNativeAppTextArea" name="blockedWebsites" rows="10" cols="50"></textarea><br>
+        <textarea id="receivedFromNativeAppTextArea" name="blockedWebsites" rows="5" cols="50"></textarea><br>
     </form>
     <br>
     <button id="openKlausButton" type="button">Open Desktop Klaus</button>
 
-
     <script type="module" src="options.js"></script>
+
+    <h2>Tracking Settings</h2>
 </body>
 
 </html>

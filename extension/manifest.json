@@ -4,8 +4,7 @@
     "description": "Blocks specified websites",
     "version": "1.0",
     "action": {
-        "default_title": "Klaus: Click to view and edit blocked websites",
-        "default_popup": "options.html"
+        "default_title": "Klaus: Click to view and edit blocked websites"
     },
     "permissions": [
         "storage",
@@ -17,7 +16,11 @@
         "service_worker": "background.js"
     },
     "options_ui": {
-        "page": "options.html",
-        "open_in_tab": true
+        "open_in_tab": true,
+        "page": "options.html"
+    },
+    "options_page": "options.html",
+    "chrome_url_overrides" : {
+        "newtab": "klausHomepage.html"
     }
 }

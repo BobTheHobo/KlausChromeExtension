@@ -6,6 +6,9 @@ const openFilesButton = document.getElementById("openFilesButton");
 const testButton = document.getElementById("testButton");
 const receivedFromNativeAppTextArea = document.getElementById("receivedFromNativeAppTextArea");
 const openKlausButton = document.getElementById("openKlausButton")
+const enableWebsiteTrackingCheckbox = document.getElementById("enableWebsiteTrackingCheckbox")
+const openKlausOnNewTabCheckbox = document.getElementById("openKlausOnNewTabCheckbox")
+const nativeKlausIntegrationsCheckbox = document.getElementById("nativeKlausIntegrationsCheckbox")
 
 main()
 
@@ -19,10 +22,28 @@ function main() {
 
     enableWebsiteBlockingCheckbox.addEventListener("change", event => websiteBlockingEventHandler(event));
     scanEntireUrlCheckbox.addEventListener("change", event => scanEntireUrlEventListener(event));
+    enableWebsiteTrackingCheckbox.addEventListener("change", event => websiteTrackingHandler(event))
+    openKlausOnNewTabCheckbox.addEventListener("change", event => openKlausAsNewTabHandler(event))
+    nativeKlausIntegrationsCheckbox.addEventListener("change", event => nativeKlausIntegrationsHandler(event))
 
     chrome.storage.onChanged.addListener(storageChangeData => storageChangeHandler(storageChangeData));
 
     window.addEventListener("DOMContentLoaded", loadAllDataFromChromeStorage);
+}
+
+function websiteTrackingHandler(event) {
+    const websiteTrackingEnabled = event.target.checked;
+    chrome.storage.sync.set({ "websiteTrackingEnabled" : websiteTrackingEnabled })
+}
+
+function openKlausAsNewTabHandler(event) {
+    const openKlausOnNewTab = event.target.checked;
+    chrome.storage.sync.set({ "openKlausOnNewTab" : openKlausOnNewTab })
+}
+
+function nativeKlausIntegrationsHandler(event) {
+    const enableNativeKlausIntegrations = event.target.checked;
+    chrome.storage.sync.set({ "enableNativeKlausIntegrations" : enableNativeKlausIntegrations })
 }
 
 // 1. Send a message to the background
@@ -105,6 +126,18 @@ function storageChangeHandler(storageChangeData) {
     if (storageChangeData.receivedTextFromNativeApp) {
         receivedFromNativeAppTextArea.value = storageChangeData.receivedTextFromNativeApp.newValue
     }
+
+    if (storageChangeData.websiteTrackingEnabled) {
+        enableWebsiteTrackingCheckbox.checked = storageChangeData.websiteTrackingEnabled.newValue
+    }
+
+    if (storageChangeData.openKlausOnNewTab) {
+        openKlausOnNewTabCheckbox.checked = storageChangeData.openKlausOnNewTab.newValue
+    }
+
+    if (storageChangeData.enableNativeKlausIntegrations) {
+        nativeKlausIntegrationsCheckbox.checked = storageChangeData.enableNativeKlausIntegrations.newValue
+    }
 }
 
 function loadAllDataFromChromeStorage() {
@@ -113,7 +146,28 @@ function loadAllDataFromChromeStorage() {
         updateReceivedTextFromNativeApp(storageData);
         updateBlockerEnabled(storageData);
         updateScanEntireUrl(storageData);
+        updateWebsiteTrackingCheckbox(storageData);
+        updateOpenKlausOnNewTabCheckbox(storageData);
+        updateEnabledNativeKlausIntegrationCheckbox(storageData);
     });
+}
+
+function updateWebsiteTrackingCheckbox(storageData) {
+    if (storageData.websiteTrackingEnabled) {
+        enableWebsiteTrackingCheckbox.checked = storageData.websiteTrackingEnabled
+    }
+}
+
+function updateOpenKlausOnNewTabCheckbox(storageData) {
+    if (storageData.openKlausOnNewTab) {
+        openKlausOnNewTabCheckbox.checked = storageData.openKlausOnNewTab
+    }
+}
+
+function updateEnabledNativeKlausIntegrationCheckbox(storageData) {
+    if (storageData.enableNativeKlausIntegrations) {
+        nativeKlausIntegrationsCheckbox.checked = storageData.enableNativeKlausIntegrations
+    }
 }
 
 function updateBlockedWebsites(storageData) {

@@ -30,6 +30,16 @@ function main() {
     // Listen for option changes and sync here
     chrome.storage.onChanged.addListener(changeData => changeDataListener(changeData));
     chrome.tabs.onUpdated.addListener((tabId, changeInfo) => tabsUpdatedListener(tabId, changeInfo));
+
+    chrome.action.onClicked.addListener(openOptionsPage)
+}
+
+function openOptionsPage() {
+    if (chrome.runtime.openOptionsPage) {
+        chrome.runtime.openOptionsPage()
+    } else {
+        window.open(chrome.runtime.getURL('options.html'));
+    }
 }
 
 function onInstallAndUpdate() {
@@ -196,7 +206,7 @@ function nativeMessageHandler(responseFromNative) {
     }
 
     if (responseFromNative.startsWith("BLOCKLIST:")) {
-        blockliststr = response.trim().replace("BLOCKLIST:", "")
+        blockliststr = responseFromNative.trim().replace("BLOCKLIST:", "")
 
         blocklistlist = blockliststr.split(",")
 
@@ -215,6 +225,7 @@ function nativeMessageHandler(responseFromNative) {
     }
 
     chrome.storage.sync.set({ receivedTextFromNativeApp: responseFromNative });
+    console.log("Response from native:" + responseFromNative)
 }
 
 function nativePortDisconnectHandler() {
