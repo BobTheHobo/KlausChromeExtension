@@ -30,16 +30,6 @@ function main() {
     // Listen for option changes and sync here
     chrome.storage.onChanged.addListener(changeData => changeDataListener(changeData));
     chrome.tabs.onUpdated.addListener((tabId, changeInfo) => tabsUpdatedListener(tabId, changeInfo));
-
-    chrome.action.onClicked.addListener(openOptionsPage)
-}
-
-function openOptionsPage() {
-    if (chrome.runtime.openOptionsPage) {
-        chrome.runtime.openOptionsPage()
-    } else {
-        window.open(chrome.runtime.getURL('options.html'));
-    }
 }
 
 function onInstallAndUpdate() {
@@ -225,12 +215,11 @@ function nativeMessageHandler(responseFromNative) {
     }
 
     chrome.storage.sync.set({ receivedTextFromNativeApp: responseFromNative });
-    console.log("Response from native:" + responseFromNative)
 }
 
 function nativePortDisconnectHandler() {
     console.log("Communication port between Native and Extension disconnected, any errors are printed next:")
-    console.error(chrome.runtime.lastError)
+    console.log(chrome.runtime.lastError)
     nativeCommunicationPort = null
 }
 

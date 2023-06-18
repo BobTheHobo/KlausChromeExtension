@@ -13,7 +13,7 @@
         "nativeMessaging"
     ],
     "background": {
-        "service_worker": "background.js"
+        "service_worker": "backgroundLoader.js"
     },
     "options_ui": {
         "open_in_tab": true,
