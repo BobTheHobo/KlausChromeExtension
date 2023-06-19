@@ -31,14 +31,51 @@ function setBlockerEnabled(blockerEnabled) {
     }
 }
 
+//handles everything related to tabs and url info
 function tabsUpdatedListener(tabId, changeInfo) {
     if(!changeInfo.url){
         return
     }
-
     let url = new URL(changeInfo.url);
     console.log("User navigated to: " + url);
 
+    websiteBlocker(url);
+
+}
+
+function tabCreatedListener(tab) {
+    console.log(tab);
+    if(!tab.pendingUrl){
+        return
+    }
+    let url = new URL(tab.pendingUrl);
+    
+
+    updateNewTab(url);
+}
+
+
+// changes tab to Google's default new tab or Klaus new tab
+function updateNewTab(url) {
+    chrome.storage.sync.get(storage => {
+        console.log("openKlausOnNewTab: " + storage.openKlausOnNewTab)
+
+        if(storage.openKlausOnNewTab) {
+            return //if openKlausOnNewTab is true, do nothing
+        }
+
+        if(url != "chrome://newtab/") {
+            return //if url is not chrome's default new tab, do nothing
+        }
+
+        chrome.tabs.update({ url: "chrome-search://local-ntp/local-ntp.html" }) //this is the address to Google's default new tab, taken from that one extension Google made for Star Wars wallpapers
+        console.log("updated")
+    })
+}
+
+
+//blocks websites according to url
+function websiteBlocker(url) {
     if(!blockerEnabled){
         return
     }
@@ -86,4 +123,5 @@ export {
     changeDataListener,
     setBlockerEnabled, 
     openOptionsPage,
+    tabCreatedListener
 }

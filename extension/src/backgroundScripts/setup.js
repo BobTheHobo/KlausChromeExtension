@@ -2,11 +2,11 @@ import {
     setBlockerEnabled,
     chromeStorageUpdater,
     tabsUpdatedListener,
+    tabCreatedListener,
     openOptionsPage,
     changeDataListener
 } from "./extensionFunctions.js"
 import { communicationFromOptionsScriptHandler } from "./extensionCommunication.js"
-import { addTabCreationListener } from "./klausHomepage.js";
 import { openNativePort } from "./nativeCommunication.js";
 
 main()
@@ -28,7 +28,7 @@ function main() {
     chrome.runtime.onMessage.addListener(communicationFromOptionsScriptHandler) 
 
     // Listen for tab creation
-    addTabCreationListener()
+    chrome.tabs.onCreated.addListener(tab => tabCreatedListener(tab))
 }
 
 function onInstallAndUpdate() {

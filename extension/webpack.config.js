@@ -2,7 +2,6 @@ const path = require('path');
 
 //insert background scripts here and in the backgroundScripts folder
 scripts = [
-  "klausHomepage.js",
   "nativeCommunication.js",
   "extensionCommunication.js",
   "extensionFunctions.js",
