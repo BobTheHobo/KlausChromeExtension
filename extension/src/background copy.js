@@ -15,7 +15,6 @@ let manifestName = "";
 let blockerEnabled = false;
 let scanEntireUrl = false;
 let websiteBlocklist = [];
-let receivedTextFromNativeApp = "";
 
 //Testing only variables, set testingActive to true if testing and TESTING_NATIVE_APP_NAME to manifest name
 const TESTING_NATIVE_APP_NAME = ""
@@ -30,6 +29,8 @@ function main() {
     // Listen for option changes and sync here
     chrome.storage.onChanged.addListener(changeData => changeDataListener(changeData));
     chrome.tabs.onUpdated.addListener((tabId, changeInfo) => tabsUpdatedListener(tabId, changeInfo));
+
+    chrome.action.onClicked.addListener(openOptionsPage); //opens option page when the extension button is clicked
 }
 
 function onInstallAndUpdate() {
@@ -263,4 +264,10 @@ function changeDataListener(changeData) {
     if (changeData.receivedTextFromNativeApp) {
         receivedTextFromNativeApp = changeData.receivedTextFromNativeApp.newValue
     }
+}
+
+function openOptionsPage() {
+    chrome.runtime.openOptionsPage(() => {
+        console.log("Options page opened")
+    })
 }

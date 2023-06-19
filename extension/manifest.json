@@ -13,14 +13,14 @@
         "nativeMessaging"
     ],
     "background": {
-        "service_worker": "backgroundLoader.js"
+        "service_worker": "./src/backgroundLoader.js"
     },
     "options_ui": {
         "open_in_tab": true,
-        "page": "options.html"
+        "page": "./src/pages/options.html"
     },
-    "options_page": "options.html",
+    "options_page": "./src/pages/options.html",
     "chrome_url_overrides" : {
-        "newtab": "klausHomepage.html"
+        "newtab": "./src/pages/klausHomepage.html"
     }
 }

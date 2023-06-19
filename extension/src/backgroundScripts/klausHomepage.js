@@ -1,9 +1,3 @@
-main()
-
-function main() {
-    addTabCreationListener()
-}
-
 function updateNewTab() {
     chrome.storage.sync.get(storage => {
         if(!storage.openKlausOnNewTab) { //if openKlausOnNewTab is false, open Google's default as the new tab
@@ -17,4 +11,8 @@ function addTabCreationListener() {
         console.log("tab created")
         updateNewTab()  
     })
+}
+
+export { 
+    addTabCreationListener
 }
