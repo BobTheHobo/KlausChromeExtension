@@ -44,12 +44,10 @@ function tabsUpdatedListener(tabId, changeInfo) {
 }
 
 function tabCreatedListener(tab) {
-    console.log(tab);
     if(!tab.pendingUrl){
         return
     }
     let url = new URL(tab.pendingUrl);
-    
 
     updateNewTab(url);
 }
@@ -58,8 +56,6 @@ function tabCreatedListener(tab) {
 // changes tab to Google's default new tab or Klaus new tab
 function updateNewTab(url) {
     chrome.storage.sync.get(storage => {
-        console.log("openKlausOnNewTab: " + storage.openKlausOnNewTab)
-
         if(storage.openKlausOnNewTab) {
             return //if openKlausOnNewTab is true, do nothing
         }
@@ -69,7 +65,6 @@ function updateNewTab(url) {
         }
 
         chrome.tabs.update({ url: "chrome-search://local-ntp/local-ntp.html" }) //this is the address to Google's default new tab, taken from that one extension Google made for Star Wars wallpapers
-        console.log("updated")
     })
 }
 
