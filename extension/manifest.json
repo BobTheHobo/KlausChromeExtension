@@ -17,10 +17,10 @@
     },
     "options_ui": {
         "open_in_tab": true,
-        "page": "./src/pages/options.html"
+        "page": "./dist/pages/options.html"
     },
-    "options_page": "./src/pages/options.html",
+    "options_page": "./dist/pages/options.html",
     "chrome_url_overrides" : {
-        "newtab": "./src/pages/klausHomepage.html"
+        "newtab": "./dist/pages/klausHomepage.html"
     }
 }

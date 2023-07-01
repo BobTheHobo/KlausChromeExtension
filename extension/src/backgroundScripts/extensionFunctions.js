@@ -39,7 +39,7 @@ function tabsUpdatedListener(tabId, changeInfo) {
     let url = new URL(changeInfo.url);
     console.log("User navigated to: " + url);
 
-    websiteBlocker(url);
+    websiteBlocker(tabId, url);
 
 }
 
@@ -70,7 +70,7 @@ function updateNewTab(url) {
 
 
 //blocks websites according to url
-function websiteBlocker(url) {
+function websiteBlocker(tabId, url) {
     if(!blockerEnabled){
         return
     }
@@ -80,6 +80,8 @@ function websiteBlocker(url) {
     } else {
         url = url.hostname.toString();
     }
+
+    console.log("Scanning " + url + " for blocked websites")
 
     if (websiteBlocklist.find(domain => url.includes(domain))) { //Sees if the url has been blocked
         chrome.tabs.remove(tabId);
