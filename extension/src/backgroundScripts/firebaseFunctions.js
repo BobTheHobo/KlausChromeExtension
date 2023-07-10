@@ -1,5 +1,7 @@
 import { initializeApp } from 'firebase/app'
-import { collection, addDoc, getFirestore } from "firebase/firestore";
+import { collection, doc, addDoc, setDoc, getFirestore, updateDoc, arrayUnion } from "firebase/firestore";
+
+import { getBlocklist } from './extensionFunctions';
 
 const firebaseConfig = {
   apiKey: "AIzaSyBDk-Ka0TLAnv-ECaYb5BfjVkjg8a9wMdU",
@@ -14,17 +16,33 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const firestoreDB = getFirestore(firebaseApp); //firestore database
 
+const testUserID = "testUser1"
+const userDocRef = doc(firestoreDB, "users", testUserID);
+
 async function testFirestore() {
   try {
-    const docRef = await addDoc(collection(firestoreDB, "users"), {
-      first: "Ada",
-      last: "Lovelace",
-      born: 1815
-    });
-    console.log("Document written with ID: ", docRef.id);
+    await setDoc(doc(firestoreDB, "users", testUserID), {
+      first: "Viet",
+      last: "Ngomai",
+      email: "thienvietngomai@gmail.com",
+      blocklist: [],
+      whitelist: [],
+    },{ merge: true });
+    console.log("Document written with ID: ", userDocRef.id);
   } catch (e) {
     console.error("Error adding document: ", e);
   }
 }
 
-export { testFirestore }
+async function saveBlocklistToFirestore(blocklist) {
+  try {
+    await updateDoc(userDocRef, {
+      blocklist: blocklist
+    })
+    console.log("Blocklist updated to firestore")
+  } catch (e) {
+    console.error("Error adding document: ", e);
+  }
+}
+
+export { testFirestore, saveBlocklistToFirestore }

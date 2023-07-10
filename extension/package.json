@@ -11,7 +11,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "firebase": "^9.23.0"
+    "firebase": "^9.23.0",
+    "firebaseui": "^6.0.2"
   },
   "devDependencies": {
     "html-webpack-plugin": "^5.5.3",

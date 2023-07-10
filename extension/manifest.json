@@ -10,7 +10,8 @@
         "storage",
         "tabs",
         "scripting",
-        "nativeMessaging"
+        "nativeMessaging",
+        "notifications"
     ],
     "background": {
         "service_worker": "./src/backgroundLoader.js"

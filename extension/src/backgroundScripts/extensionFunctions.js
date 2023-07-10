@@ -1,6 +1,9 @@
+import xicon from "../icons/xicon.png";
+
 let blockerEnabled = false;
 let scanEntireUrl = false;
 let websiteBlocklist = [];
+let whitelistedWebsites = [];
 let receivedTextFromNativeApp = "";
 
 function chromeStorageUpdater(chromeSyncStorageData) {
@@ -9,7 +12,13 @@ function chromeStorageUpdater(chromeSyncStorageData) {
         console.log("Blocked websites array reset on first runtime")
     }
 
+    if (!Array.isArray(chromeSyncStorageData.whitelistedWebsites)) { //if blocked websites array wonky, reset
+        chrome.storage.sync.set({ whitelistedWebsites: [] });
+        console.log("Whitelisted websites array reset on first runtime")
+    }
+
     websiteBlocklist = chromeSyncStorageData.blockedWebsites;
+    whitelistedWebsites = chromeSyncStorageData.whitelistedWebsites;
 
     if (chromeSyncStorageData.receivedTextFromNativeApp) {
         receivedTextFromNativeApp = chromeSyncStorageData.receivedTextFromNativeApp
@@ -75,17 +84,22 @@ function websiteBlocker(tabId, url) {
         return
     }
 
-    if(scanEntireUrl) {
-        url = url.toString()
-    } else {
-        url = url.hostname.toString();
+    let urlString = url.toString();
+
+    if (whitelistedWebsites.find(domain => urlString.includes(domain))) { //Sees if the url has been whitelisted
+        return //if whitelisted, do nothing
+    }    
+
+    if(scanEntireUrl == false) {
+        urlString = url.hostname.toString();
     }
 
     console.log("Scanning " + url + " for blocked websites")
 
-    if (websiteBlocklist.find(domain => url.includes(domain))) { //Sees if the url has been blocked
-        chrome.tabs.remove(tabId);
-        console.log("Klaus blocked " + url);
+    if (websiteBlocklist.find(domain => urlString.includes(domain))) { //Sees if the url has been blocked
+        createNotification("Klaus blocked a website", "Klaus blocked " + urlString)
+        // chrome.tabs.remove(tabId);
+        console.log("Klaus blocked " + urlString);
     }
 }
 
@@ -94,6 +108,10 @@ function changeDataListener(changeData) {
         websiteBlocklist = changeData.blockedWebsites.newValue;
     }
 
+    if (changeData.whitelistedWebsites) {
+        whitelistedWebsites = changeData.whitelistedWebsites.newValue;
+    }
+    
     if (changeData.blockerEnabled) {
         blockerEnabled = changeData.blockerEnabled.newValue;
     }
@@ -113,6 +131,27 @@ function openOptionsPage() {
     })
 }
 
+function getBlocklist() {
+    chrome.storage.sync.get("blockedWebsites", (blocklist) => {
+        return blocklist
+    })
+}
+
+function createNotification(title, message){
+    chrome.notifications.create(
+        "Example",
+        {
+            type: "basic",
+            title: title,
+            message: message,
+            iconUrl: "icons/xicon.png",
+            requireInteraction: true,
+            priority: 2
+        }
+    );
+    // chrome.notifications.clear("Example");
+}
+
 
 export { 
     chromeStorageUpdater, 
@@ -120,5 +159,6 @@ export {
     changeDataListener,
     setBlockerEnabled, 
     openOptionsPage,
-    tabCreatedListener
+    tabCreatedListener,
+    getBlocklist
 }
