@@ -1,5 +1,3 @@
-import xicon from "../icons/xicon.png";
-
 let blockerEnabled = false;
 let scanEntireUrl = false;
 let websiteBlocklist = [];
@@ -27,13 +25,14 @@ function chromeStorageUpdater(chromeSyncStorageData) {
     chrome.storage.sync.set({ scanEntireUrl: false }); //set scanEntireUrl when first installed
 }
 
-function setBlockerEnabled(blockerEnabled) {
-    chrome.storage.sync.set({ blockerEnabled })
-    if (blockerEnabled == false) {
+function setBlockerEnabled(status) {
+    blockerEnabled = status;
+    chrome.storage.sync.set({ status })
+    if (status == false) {
         chrome.action.setBadgeText({
             text: "OFF", //set badgetext to off
         });
-    } else if (blockerEnabled == true) {
+    } else if (status == true) {
         chrome.action.setBadgeText({
             text: "ON", //set badgetext to on
         });
@@ -79,7 +78,7 @@ function updateNewTab(url) {
 
 
 //blocks websites according to url
-function websiteBlocker(tabId, url) {
+function websiteBlocker(tabId, url) {    
     if(!blockerEnabled){
         return
     }
@@ -94,11 +93,11 @@ function websiteBlocker(tabId, url) {
         urlString = url.hostname.toString();
     }
 
-    console.log("Scanning " + url + " for blocked websites")
+    console.log("Scanning " + urlString + " for blocked websites")
 
     if (websiteBlocklist.find(domain => urlString.includes(domain))) { //Sees if the url has been blocked
-        createNotification("Klaus blocked a website", "Klaus blocked " + urlString)
-        // chrome.tabs.remove(tabId);
+        createNotification("Klaus Chrome Extension", "Klaus blocked " + urlString)
+        chrome.tabs.remove(tabId);
         console.log("Klaus blocked " + urlString);
     }
 }
@@ -114,6 +113,9 @@ function changeDataListener(changeData) {
     
     if (changeData.blockerEnabled) {
         blockerEnabled = changeData.blockerEnabled.newValue;
+        if (blockerEnabled == true){
+            scanCurrentTabsForBlock()
+        }
     }
 
     if (changeData.scanEntireUrl) {
@@ -152,6 +154,20 @@ function createNotification(title, message){
     // chrome.notifications.clear("Example");
 }
 
+function getAllTabs(){
+    return new Promise(async (resolve) => {
+        await chrome.tabs.query({}, (tabs) => {
+            resolve(tabs)
+        })
+    })
+}
+
+async function scanCurrentTabsForBlock(){
+    let tabs = await getAllTabs()
+    for(let tab of tabs){
+        websiteBlocker(tab.id, new URL(tab.url))
+    }
+}
 
 export { 
     chromeStorageUpdater, 
@@ -160,5 +176,6 @@ export {
     setBlockerEnabled, 
     openOptionsPage,
     tabCreatedListener,
-    getBlocklist
+    getBlocklist,
+    scanCurrentTabsForBlock
 }

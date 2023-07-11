@@ -1,4 +1,8 @@
+import { scanCurrentTabsForBlock } from "../backgroundScripts/extensionFunctions";
 import { saveBlocklistToFirestore } from "../backgroundScripts/firebaseFunctions";
+import xicon from "../icons/xicon.png";
+const icon = new Image();
+icon.src = xicon;
 
 const blockedWebsitesTextArea = document.getElementById("blockedWebsitesTextArea");
 const whitelistTextArea = document.getElementById("whitelistTextArea");
@@ -23,13 +27,15 @@ function main() {
     openKlausButton.addEventListener("click", openNativeKlaus);
 
     enableWebsiteBlockingCheckbox.addEventListener("change", event => websiteBlockingEventHandler(event));
-    scanEntireUrlCheckbox.addEventListener("change", event => scanEntireUrlEventListener(event));
+    scanEntireUrlCheckbox.addEventListener("change", event => scanEntireUrlEventHandler(event));
     enableWebsiteTrackingCheckbox.addEventListener("change", event => websiteTrackingHandler(event))
     openKlausOnNewTabCheckbox.addEventListener("change", event => openKlausAsNewTabHandler(event))
 
     chrome.storage.onChanged.addListener(storageChangeData => storageChangeHandler(storageChangeData));
 
     window.addEventListener("DOMContentLoaded", loadAllDataFromChromeStorage);
+
+    chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) => notificationButtonHandler(notificationId, buttonIndex));
 }
 
 function websiteTrackingHandler(event) {
@@ -86,11 +92,44 @@ function saveWhitelist() {
 function websiteBlockingEventHandler(event) {
     const blockerEnabled = event.target.checked;
 
-    chrome.storage.sync.set({ "blockerEnabled": blockerEnabled });
+    if (blockerEnabled == true) {
+        enableBlockingConfirmationNotification()
+        enableWebsiteBlockingCheckbox.checked = false
+    } else {
+        enableBlocker(false)
+    }
+}
 
-    setBlockerBadgeEnabled(blockerEnabled)
+function enableBlocker(status) {
+    chrome.storage.sync.set({ "blockerEnabled": status });
 
-    console.log("Enabled turned to " + blockerEnabled)
+    setBlockerBadgeEnabled(status)
+
+    console.log("Enabled turned to " + status)
+}
+
+function enableBlockingConfirmationNotification() {
+    chrome.notifications.create("Warning Notification",
+    {
+        type: "basic",
+        title: "Klaus Chrome Extension",
+        message: "Make sure any work is saved, as Klaus will now close any tabs with blocked websites",
+        iconUrl: icon.src,
+        buttons: [{title: "Continue"}, {title: "Cancel"}],
+        priority: 2,
+        requireInteraction: true
+    })
+}
+
+function notificationButtonHandler(notificationId, buttonIndex) {
+    if (notificationId == "Warning Notification"){
+        if(buttonIndex == 0){
+            enableBlocker(true)
+            console.log("coming from", notificationId, "button", buttonIndex)
+            scanCurrentTabsForBlock()
+        }
+        chrome.notifications.clear(notificationId)
+    }
 }
 
 function setBlockerBadgeEnabled(enabled) {
@@ -105,7 +144,7 @@ function setBlockerBadgeEnabled(enabled) {
     }
 }
 
-function scanEntireUrlEventListener(event) {
+function scanEntireUrlEventHandler(event) {
     const scanEntireUrl = event.target.checked;
     chrome.storage.sync.set({ "scanEntireUrl": scanEntireUrl });
     console.log("Scan entire URL turned to " + scanEntireUrl)
