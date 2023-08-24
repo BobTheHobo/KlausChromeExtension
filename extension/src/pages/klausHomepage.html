@@ -1,11 +1,39 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Klaus Homepage</title>
+    <script type="module" src="../contentScripts/klausHomepage.js"></script>
+    <link rel="stylesheet" href="../css/klausHomepage.css">
 </head>
 <body>
-    <h1>Klaus Homepage</h1>
-    <p>More will be added soon!</p>
+    <div class="topnav">
+        <div class="section" style="justify-content: flex-start;">
+            <a class="active" href="klausHomepage.html">Home</a>
+        </div>
+        <div class="section" style="justify-content: center;">
+            <h1 class="headertext">Klaus<h1>
+        </div>
+        <div class="section" style="justify-content: flex-end;">
+            <a class="right" href="options.html">Options</a>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="clockandmantra">
+            <div class="clock-center">
+                <span id="clock"></span>
+            </div>
+            <div class="greetingtext">
+                <span id="greeting">
+                    <t>What's up</t>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        Klaus Homepage
+    </div>
 </body>
 </html>

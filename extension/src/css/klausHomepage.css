@@ -1,0 +1,116 @@
+/* default */
+.header, .footer {
+    margin: 0;
+    padding: 20px;
+    align-items: center;
+    justify-content: center;
+}
+
+html, body {
+    margin: 0;
+}
+
+body {
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+    flex-flow: column;
+}
+
+.main {
+    display: flex;
+    flex: 1;
+    padding: 5px 12px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.fill-height {
+    flex: 1;
+}
+
+/* website header */
+.header {
+    background-color: aliceblue;
+    font-size: 35px;
+    height: 4rem;
+}
+
+/* navbar container */
+.topnav {
+    display: flex;
+    width: 100%;
+    overflow: hidden;
+    background-color: rgb(255, 255, 255);
+    height: 3rem;
+    align-items: top;
+}
+
+/* navbar section */
+.topnav .section {
+    flex: 1;
+    display: flex;
+    margin: 0;
+}
+
+.section .headertext {
+    display: flex;
+    align-items: center;
+    padding:  0px 12px;
+    text-decoration: none;
+}
+
+/* navbar links */
+.topnav a {
+    color: #000000;
+    text-align: center;
+    padding: 10px 12px;
+    text-decoration: none;
+    font-size: 17px;
+}
+
+/*navbar links hover */
+.topnav a:hover {
+    color: #bdbdbd;
+}
+
+/* navbar active link */
+.topnav a.active {
+    background-color: #b1b1b1;
+    color: white;
+}
+
+/* footer */
+.footer {
+    background-color: #f1f1f1;
+    text-align: center;
+}
+
+.clockandmantra {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+}
+
+.clock-center {
+    display: block;
+    grid-column: 2 / span 1;
+    grid-row: 1 / span 1;
+    text-align: center;
+    font-size: 80px;
+    font-weight: bold;
+    color: #000000;
+}
+
+.greetingtext {
+    display: block;
+    grid-column: 2 / span 1;
+    grid-row: 2 / span 1;
+    text-align: center;
+    font-size: 50px;
+    color:#000000;
+}
