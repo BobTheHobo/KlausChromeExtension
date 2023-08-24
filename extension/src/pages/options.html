@@ -20,55 +20,61 @@
         </div>
     </div>
 
-    <div class="main">
-        <div>
-            <h2>General</h2>
-            
-            <input id="enableWebsiteBlockingCheckbox" type="checkbox">
-            <label for="enableWebsiteBlockingCheckbox">Enable website blocking</label>
-            <br>
-            <br>
-            <input id="enableWebsiteTrackingCheckbox" type="checkbox">
-            <label for="enableWebsiteTrackingCheckbox">Enable website tracking</label>
-            <br>
-            <br>
-            <input id="openKlausOnNewTabCheckbox" type="checkbox">
-            <label for="openKlausOnNewTabCheckbox">Open Klaus homepage on new tab</label>
-            <br>
-            <br>
-            <input id="nativeKlausIntegrationsCheckbox" type="checkbox">
-            <label for="nativeKlausIntegrationsCheckbox">Enable native Klaus integrations (UNSTABLE)</label>
-            <br>
-            <br>
-            <form>
-                <label for="blockedWebsitesTextArea">Blocked Websites:</label><br>
-                <textarea id="blockedWebsitesTextArea" name="blockedWebsites" rows="10" cols="50"></textarea><br>
-            </form>
-            <button id="saveBlocklistButton" type="button">Save Blocklist</button>
-            <button id="openFilesButton" type="button">Import Blocklist (NO FUNCTIONALITY)</button>
-            <br>
-            <br>
-            <t>Additional Options:</t>
-            <br>
-            <input id="scanEntireUrlCheckbox" type="checkbox">
-            <label for="scanEntireUrlCheckbox">Scan entire URL (blocks upon any mention in URL)</label>
-            <br>
-            <br>
-            <button id="testButton" type="button">Send current blocklist</button>
-            <br>
-            <br>
-            <form>
-                <label for="receivedFromNativeAppTextArea">Received Blocked Websites:</label><br>
-                <textarea id="receivedFromNativeAppTextArea" name="blockedWebsites" rows="5" cols="50"></textarea><br>
-            </form>
-            <br>
-            <button id="openKlausButton" type="button">Open Desktop Klaus</button>
+<div class="main">
+    <div>
+        <h2>General</h2>
     
-            <h2>Tracking Settings</h2>
-        </div>
-    </div> 
+        <input id="enableWebsiteBlockingCheckbox" type="checkbox">
+        <label for="enableWebsiteBlockingCheckbox">Enable website blocking</label>
+        <t style="color:coral">(Will close any tabs with blocked websites that are currently open!)</t>
+        <br>
+        <br>
+        <input id="scanEntireUrlCheckbox" type="checkbox">
+        <label for="scanEntireUrlCheckbox">Scan entire URL (blocks upon any mention in URL)</label>
+        <br>
+        <br>
+        <input id="openKlausOnNewTabCheckbox" type="checkbox">
+        <label for="openKlausOnNewTabCheckbox">Open Klaus homepage on new tab</label>
+        <br>
+        <br>
+        <form>
+            <label for="blockedWebsitesTextArea"><b>Blocked Websites:</b></label><br>
+            <textarea id="blockedWebsitesTextArea" name="blockedWebsites" rows="7" cols="50"></textarea><br>
+        </form>
+        <button id="saveBlocklistButton" type="button">Save Blocklist</button>
+        <br>
+        <br>
+        <form>
+            <label for="whitelistTextArea">
+                <b>Whitelisted Websites:</b><br
+                <t>Note: Whitelisted websites take precedence over blocked websites</t>
+            </label><br>
+            <textarea id="whitelistTextArea" name="whitelistedWebsites" rows="7" cols="50"></textarea><br>
+        </form>
+        <button id="saveWhitelistButton" type="button">Save Whitelist</button>
+        <br>
 
-    <script type="module" src="../contentScripts/options.js"></script>
+        <h2>Tracking Settings</h2>
+        <input id="enableWebsiteTrackingCheckbox" type="checkbox">
+        <label for="enableWebsiteTrackingCheckbox">Enable website tracking</label>
+        <br>
+        <br>
+
+        <h2>Additional Options:</h2>
+        <form>
+            <label for="receivedFromNativeAppTextArea">Received Blocked Websites:</label><br>
+            <textarea id="receivedFromNativeAppTextArea" name="blockedWebsites" rows="7" cols="50"></textarea><br>
+        </form>
+        <button id="testButton" type="button">Test Button</button>
+        <br>
+        <br>
+        <button id="openKlausButton" type="button">Open Desktop Klaus</button>
+
+        <script type="module" src="../contentScripts/options.js"></script>
+
+        <h2>Tracking Settings</h2>
+    </div>
+</div>
 </body>
 
 </html>

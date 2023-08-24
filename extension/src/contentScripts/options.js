@@ -1,14 +1,20 @@
+import { scanCurrentTabsForBlock } from "../backgroundScripts/extensionFunctions";
+import { saveBlocklistToFirestore } from "../backgroundScripts/firebaseFunctions";
+import xicon from "../icons/xicon.png";
+const icon = new Image();
+icon.src = xicon;
+
 const blockedWebsitesTextArea = document.getElementById("blockedWebsitesTextArea");
+const whitelistTextArea = document.getElementById("whitelistTextArea");
 const saveBlocklistButton = document.getElementById("saveBlocklistButton");
+const saveWhitelistButton = document.getElementById("saveWhitelistButton");
 const enableWebsiteBlockingCheckbox = document.getElementById("enableWebsiteBlockingCheckbox");
 const urlOptionChekbox = document.getElementById("scanEntireUrlCheckbox");
-const openFilesButton = document.getElementById("openFilesButton");
 const testButton = document.getElementById("testButton");
 const receivedFromNativeAppTextArea = document.getElementById("receivedFromNativeAppTextArea");
 const openKlausButton = document.getElementById("openKlausButton")
 const enableWebsiteTrackingCheckbox = document.getElementById("enableWebsiteTrackingCheckbox")
 const openKlausOnNewTabCheckbox = document.getElementById("openKlausOnNewTabCheckbox")
-const nativeKlausIntegrationsCheckbox = document.getElementById("nativeKlausIntegrationsCheckbox")
 
 main()
 
@@ -16,19 +22,20 @@ function main() {
     refreshBlocklistFromNative(); //updates blocklist when the options popup/page is opened
 
     saveBlocklistButton.addEventListener("click", saveBlocklist);
+    saveWhitelistButton.addEventListener("click", saveWhitelist);
     testButton.addEventListener("click", testEvent);
     openKlausButton.addEventListener("click", openNativeKlaus);
-    openFilesButton.addEventListener("click", openFile);
 
     enableWebsiteBlockingCheckbox.addEventListener("change", event => websiteBlockingEventHandler(event));
-    scanEntireUrlCheckbox.addEventListener("change", event => scanEntireUrlEventListener(event));
+    scanEntireUrlCheckbox.addEventListener("change", event => scanEntireUrlEventHandler(event));
     enableWebsiteTrackingCheckbox.addEventListener("change", event => websiteTrackingHandler(event))
     openKlausOnNewTabCheckbox.addEventListener("change", event => openKlausAsNewTabHandler(event))
-    nativeKlausIntegrationsCheckbox.addEventListener("change", event => nativeKlausIntegrationsHandler(event))
 
     chrome.storage.onChanged.addListener(storageChangeData => storageChangeHandler(storageChangeData));
 
     window.addEventListener("DOMContentLoaded", loadAllDataFromChromeStorage);
+
+    chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) => notificationButtonHandler(notificationId, buttonIndex));
 }
 
 function websiteTrackingHandler(event) {
@@ -39,11 +46,6 @@ function websiteTrackingHandler(event) {
 function openKlausAsNewTabHandler(event) {
     const openKlausOnNewTab = event.target.checked;
     chrome.storage.sync.set({ "openKlausOnNewTab" : openKlausOnNewTab })
-}
-
-function nativeKlausIntegrationsHandler(event) {
-    const enableNativeKlausIntegrations = event.target.checked;
-    chrome.storage.sync.set({ "enableNativeKlausIntegrations" : enableNativeKlausIntegrations })
 }
 
 // 1. Send a message to the background
@@ -74,9 +76,15 @@ function testEvent() {
 function saveBlocklist() {
     const blocked = blockedWebsitesTextArea.value.split("\n").map(s => s.trim()).filter(Boolean);
     chrome.storage.sync.set({ "blockedWebsites": blocked }, () => {
-        alert("Blocked websites saved")
-        console.log("Blocked websites saved")
-        // sendMessageToBackground('sendNewBlocklist', '') TODO: FIGURE OUT WHY THIS CAUSES NATIVE PORT TO EXIT
+        console.log("Blocked websites saved to chrome sync storage")
+    });
+    saveBlocklistToFirestore(blocked)
+}
+
+function saveWhitelist() {
+    const whitelist = whitelistTextArea.value.split("\n").map(s => s.trim()).filter(Boolean);
+    chrome.storage.sync.set({ "whitelistedWebsites": whitelist }, () => {
+        console.log("Whitelisted websites saved to chrome sync storage")
     });
 }
 
@@ -84,11 +92,44 @@ function saveBlocklist() {
 function websiteBlockingEventHandler(event) {
     const blockerEnabled = event.target.checked;
 
-    chrome.storage.sync.set({ "blockerEnabled": blockerEnabled });
+    if (blockerEnabled == true) {
+        enableBlockingConfirmationNotification()
+        enableWebsiteBlockingCheckbox.checked = false
+    } else {
+        enableBlocker(false)
+    }
+}
 
-    setBlockerBadgeEnabled(blockerEnabled)
+function enableBlocker(status) {
+    chrome.storage.sync.set({ "blockerEnabled": status });
 
-    console.log("Enabled turned to " + blockerEnabled)
+    setBlockerBadgeEnabled(status)
+
+    console.log("Enabled turned to " + status)
+}
+
+function enableBlockingConfirmationNotification() {
+    chrome.notifications.create("Warning Notification",
+    {
+        type: "basic",
+        title: "Klaus Chrome Extension",
+        message: "Make sure any work is saved, as Klaus will now close any tabs with blocked websites",
+        iconUrl: icon.src,
+        buttons: [{title: "Continue"}, {title: "Cancel"}],
+        priority: 2,
+        requireInteraction: true
+    })
+}
+
+function notificationButtonHandler(notificationId, buttonIndex) {
+    if (notificationId == "Warning Notification"){
+        if(buttonIndex == 0){
+            enableBlocker(true)
+            console.log("coming from", notificationId, "button", buttonIndex)
+            scanCurrentTabsForBlock()
+        }
+        chrome.notifications.clear(notificationId)
+    }
 }
 
 function setBlockerBadgeEnabled(enabled) {
@@ -103,7 +144,7 @@ function setBlockerBadgeEnabled(enabled) {
     }
 }
 
-function scanEntireUrlEventListener(event) {
+function scanEntireUrlEventHandler(event) {
     const scanEntireUrl = event.target.checked;
     chrome.storage.sync.set({ "scanEntireUrl": scanEntireUrl });
     console.log("Scan entire URL turned to " + scanEntireUrl)
@@ -113,6 +154,10 @@ function scanEntireUrlEventListener(event) {
 function storageChangeHandler(storageChangeData) {
     if (storageChangeData.blockedWebsites) {
         blockedWebsitesTextArea.value = storageChangeData.blockedWebsites.newValue.join("\n");
+    }
+
+    if (storageChangeData.whitelistedWebsites) {
+        whitelistTextArea.value = storageChangeData.whitelistedWebsites.newValue.join("\n");
     }
 
     if (storageChangeData.blockerEnabled) {
@@ -134,21 +179,17 @@ function storageChangeHandler(storageChangeData) {
     if (storageChangeData.openKlausOnNewTab) {
         openKlausOnNewTabCheckbox.checked = storageChangeData.openKlausOnNewTab.newValue
     }
-
-    if (storageChangeData.enableNativeKlausIntegrations) {
-        nativeKlausIntegrationsCheckbox.checked = storageChangeData.enableNativeKlausIntegrations.newValue
-    }
 }
 
 function loadAllDataFromChromeStorage() {
     chrome.storage.sync.get((storageData) => {
         updateBlockedWebsites(storageData);
+        updateWhitelistedWebsites(storageData);
         updateReceivedTextFromNativeApp(storageData);
         updateBlockerEnabled(storageData);
         updateScanEntireUrl(storageData);
         updateWebsiteTrackingCheckbox(storageData);
         updateOpenKlausOnNewTabCheckbox(storageData);
-        updateEnabledNativeKlausIntegrationCheckbox(storageData);
     });
 }
 
@@ -164,18 +205,21 @@ function updateOpenKlausOnNewTabCheckbox(storageData) {
     }
 }
 
-function updateEnabledNativeKlausIntegrationCheckbox(storageData) {
-    if (storageData.enableNativeKlausIntegrations) {
-        nativeKlausIntegrationsCheckbox.checked = storageData.enableNativeKlausIntegrations
-    }
-}
-
 function updateBlockedWebsites(storageData) {
     if (storageData.blockedWebsites) {
         blockedWebsitesTextArea.value = storageData.blockedWebsites.join("\n");
     } else {
         chrome.storage.sync.set({ blockedWebsites: [] });
         console.log("blockedWebsites reset to empty array");
+    }
+}
+
+function updateWhitelistedWebsites(storageData) {
+    if (storageData.whitelistedWebsites) {
+        whitelistTextArea.value = storageData.whitelistedWebsites.join("\n");
+    } else {
+        chrome.storage.sync.set({ whitelistedWebsites: [] });
+        console.log("whitelistedWebsites reset to empty array");
     }
 }
 
@@ -205,15 +249,4 @@ function updateScanEntireUrl(storageData) {
         chrome.storage.sync.set({ scanEntireUrl: false });
         console.log("scanEntireUrl reset to false");
     }
-}
-
-//opens file manager
-async function openFile() {
-    console.log('Opening file manager')
-    const [fileHandle] = await window.showOpenFilePicker();
-
-    const file = await fileHandle.getFile();
-    const contents = await file.text();
-
-    console.log(contents)
 }

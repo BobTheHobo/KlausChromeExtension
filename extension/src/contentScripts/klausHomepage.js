@@ -1,6 +1,12 @@
+import { testFirestore } from '../backgroundScripts/firebaseFunctions.js';
+
+const testFirestoreButton = document.getElementById('testFirestoreButton');
+
 main()
 
 function main() {
+    testFirestoreButton.addEventListener('click', testFirestore);
+
     setInterval(updateClock, 1000);
     updateClock();
 }
@@ -13,5 +19,6 @@ function updateClock() {
     const seconds = now.getSeconds().toString().padStart(2, '0');
     const timeString = `${hours}:${minutes}:${seconds}`;
     
+
     document.getElementById('clock').textContent = timeString;
 }

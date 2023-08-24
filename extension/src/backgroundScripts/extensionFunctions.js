@@ -1,6 +1,7 @@
 let blockerEnabled = false;
 let scanEntireUrl = false;
 let websiteBlocklist = [];
+let whitelistedWebsites = [];
 let receivedTextFromNativeApp = "";
 
 function chromeStorageUpdater(chromeSyncStorageData) {
@@ -9,7 +10,13 @@ function chromeStorageUpdater(chromeSyncStorageData) {
         console.log("Blocked websites array reset on first runtime")
     }
 
+    if (!Array.isArray(chromeSyncStorageData.whitelistedWebsites)) { //if blocked websites array wonky, reset
+        chrome.storage.sync.set({ whitelistedWebsites: [] });
+        console.log("Whitelisted websites array reset on first runtime")
+    }
+
     websiteBlocklist = chromeSyncStorageData.blockedWebsites;
+    whitelistedWebsites = chromeSyncStorageData.whitelistedWebsites;
 
     if (chromeSyncStorageData.receivedTextFromNativeApp) {
         receivedTextFromNativeApp = chromeSyncStorageData.receivedTextFromNativeApp
@@ -18,13 +25,14 @@ function chromeStorageUpdater(chromeSyncStorageData) {
     chrome.storage.sync.set({ scanEntireUrl: false }); //set scanEntireUrl when first installed
 }
 
-function setBlockerEnabled(blockerEnabled) {
-    chrome.storage.sync.set({ blockerEnabled })
-    if (blockerEnabled == false) {
+function setBlockerEnabled(status) {
+    blockerEnabled = status;
+    chrome.storage.sync.set({ status })
+    if (status == false) {
         chrome.action.setBadgeText({
             text: "OFF", //set badgetext to off
         });
-    } else if (blockerEnabled == true) {
+    } else if (status == true) {
         chrome.action.setBadgeText({
             text: "ON", //set badgetext to on
         });
@@ -39,7 +47,7 @@ function tabsUpdatedListener(tabId, changeInfo) {
     let url = new URL(changeInfo.url);
     console.log("User navigated to: " + url);
 
-    websiteBlocker(url);
+    websiteBlocker(tabId, url);
 
 }
 
@@ -70,20 +78,27 @@ function updateNewTab(url) {
 
 
 //blocks websites according to url
-function websiteBlocker(url) {
+function websiteBlocker(tabId, url) {    
     if(!blockerEnabled){
         return
     }
 
-    if(scanEntireUrl) {
-        url = url.toString()
-    } else {
-        url = url.hostname.toString();
+    let urlString = url.toString();
+
+    if (whitelistedWebsites.find(domain => urlString.includes(domain))) { //Sees if the url has been whitelisted
+        return //if whitelisted, do nothing
+    }    
+
+    if(scanEntireUrl == false) {
+        urlString = url.hostname.toString();
     }
 
-    if (websiteBlocklist.find(domain => url.includes(domain))) { //Sees if the url has been blocked
+    console.log("Scanning " + urlString + " for blocked websites")
+
+    if (websiteBlocklist.find(domain => urlString.includes(domain))) { //Sees if the url has been blocked
+        createNotification("Klaus Chrome Extension", "Klaus blocked " + urlString)
         chrome.tabs.remove(tabId);
-        console.log("Klaus blocked " + url);
+        console.log("Klaus blocked " + urlString);
     }
 }
 
@@ -92,8 +107,15 @@ function changeDataListener(changeData) {
         websiteBlocklist = changeData.blockedWebsites.newValue;
     }
 
+    if (changeData.whitelistedWebsites) {
+        whitelistedWebsites = changeData.whitelistedWebsites.newValue;
+    }
+    
     if (changeData.blockerEnabled) {
         blockerEnabled = changeData.blockerEnabled.newValue;
+        if (blockerEnabled == true){
+            scanCurrentTabsForBlock()
+        }
     }
 
     if (changeData.scanEntireUrl) {
@@ -111,6 +133,41 @@ function openOptionsPage() {
     })
 }
 
+function getBlocklist() {
+    chrome.storage.sync.get("blockedWebsites", (blocklist) => {
+        return blocklist
+    })
+}
+
+function createNotification(title, message){
+    chrome.notifications.create(
+        "Example",
+        {
+            type: "basic",
+            title: title,
+            message: message,
+            iconUrl: "icons/xicon.png",
+            requireInteraction: true,
+            priority: 2
+        }
+    );
+    // chrome.notifications.clear("Example");
+}
+
+function getAllTabs(){
+    return new Promise(async (resolve) => {
+        await chrome.tabs.query({}, (tabs) => {
+            resolve(tabs)
+        })
+    })
+}
+
+async function scanCurrentTabsForBlock(){
+    let tabs = await getAllTabs()
+    for(let tab of tabs){
+        websiteBlocker(tab.id, new URL(tab.url))
+    }
+}
 
 export { 
     chromeStorageUpdater, 
@@ -118,5 +175,7 @@ export {
     changeDataListener,
     setBlockerEnabled, 
     openOptionsPage,
-    tabCreatedListener
+    tabCreatedListener,
+    getBlocklist,
+    scanCurrentTabsForBlock
 }

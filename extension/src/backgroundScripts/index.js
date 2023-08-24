@@ -1,0 +1,5 @@
+import * as extensionCommunication from "./extensionCommunication.js"
+import * as extensionFunctions from "./extensionFunctions.js"
+import * as firebaseFunctions from "./firebaseFunctions.js"
+import * as nativeCommunication from "./nativeCommunication.js"
+import * as extensionSetup from "./extensionSetup.js"
