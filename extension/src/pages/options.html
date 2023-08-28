@@ -4,77 +4,74 @@
 <head>
     <meta charset="UTF-8">
     <title>Klaus Options</title>
-    <link rel="stylesheet" href="../css/klausHomepage.css">
 </head>
 
 <body>
     <div class="topnav">
         <div class="section" style="justify-content: flex-start;">
-            <a href="klausHomepage.html">Home</a>
+            <a class="active" href="klausHomepage.html">Home</a>
         </div>
         <div class="section" style="justify-content: center;">
-            <h1 class="headertext">Klaus Options<h1>
+            <h1 class="headertext">Klaus<h1>
         </div>
         <div class="section" style="justify-content: flex-end;">
-            <a class="active" href="options.html">Options</a>
+            <a class="right" href="options.html">Options</a>
         </div>
     </div>
 
-<div class="main">
-    <div>
-        <h2>General</h2>
+    <div class="main">
+        <div>
+            <h1>Klaus Options</h1>
     
-        <input id="enableWebsiteBlockingCheckbox" type="checkbox">
-        <label for="enableWebsiteBlockingCheckbox">Enable website blocking</label>
-        <t style="color:coral">(Will close any tabs with blocked websites that are currently open!)</t>
-        <br>
-        <br>
-        <input id="scanEntireUrlCheckbox" type="checkbox">
-        <label for="scanEntireUrlCheckbox">Scan entire URL (blocks upon any mention in URL)</label>
-        <br>
-        <br>
-        <input id="openKlausOnNewTabCheckbox" type="checkbox">
-        <label for="openKlausOnNewTabCheckbox">Open Klaus homepage on new tab</label>
-        <br>
-        <br>
-        <form>
-            <label for="blockedWebsitesTextArea"><b>Blocked Websites:</b></label><br>
-            <textarea id="blockedWebsitesTextArea" name="blockedWebsites" rows="7" cols="50"></textarea><br>
-        </form>
-        <button id="saveBlocklistButton" type="button">Save Blocklist</button>
-        <br>
-        <br>
-        <form>
-            <label for="whitelistTextArea">
-                <b>Whitelisted Websites:</b><br
-                <t>Note: Whitelisted websites take precedence over blocked websites</t>
-            </label><br>
-            <textarea id="whitelistTextArea" name="whitelistedWebsites" rows="7" cols="50"></textarea><br>
-        </form>
-        <button id="saveWhitelistButton" type="button">Save Whitelist</button>
-        <br>
-
-        <h2>Tracking Settings</h2>
-        <input id="enableWebsiteTrackingCheckbox" type="checkbox">
-        <label for="enableWebsiteTrackingCheckbox">Enable website tracking</label>
-        <br>
-        <br>
-
-        <h2>Additional Options:</h2>
-        <form>
-            <label for="receivedFromNativeAppTextArea">Received Blocked Websites:</label><br>
-            <textarea id="receivedFromNativeAppTextArea" name="blockedWebsites" rows="7" cols="50"></textarea><br>
-        </form>
-        <button id="testButton" type="button">Test Button</button>
-        <br>
-        <br>
-        <button id="openKlausButton" type="button">Open Desktop Klaus</button>
-
-        <script type="module" src="../contentScripts/options.js"></script>
-
-        <h2>Tracking Settings</h2>
+            <h2>General</h2>
+            
+            <input id="enableWebsiteBlockingCheckbox" type="checkbox">
+            <label for="enableWebsiteBlockingCheckbox">Enable website blocking</label>
+            <t style="color:coral">(Will close any tabs with blocked websites that are currently open!)</t>
+            <br>
+            <br>
+            <input id="scanEntireUrlCheckbox" type="checkbox">
+            <label for="scanEntireUrlCheckbox">Scan entire URL (blocks upon any mention in URL)</label>
+            <br>
+            <br>
+            <input id="openKlausOnNewTabCheckbox" type="checkbox">
+            <label for="openKlausOnNewTabCheckbox">Open Klaus homepage on new tab</label>
+            <br>
+            <br>
+            <form>
+                <label for="blockedWebsitesTextArea"><b>Blocked Websites:</b></label><br>
+                <textarea id="blockedWebsitesTextArea" name="blockedWebsites" rows="7" cols="50"></textarea><br>
+            </form>
+            <button id="saveBlocklistButton" type="button">Save Blocklist</button>
+            <br>
+            <br>
+            <form>
+                <label for="whitelistTextArea">
+                    <b>Whitelisted Websites:</b><br
+                    <t>Note: Whitelisted websites take precedence over blocked websites</t>
+                </label><br>
+                <textarea id="whitelistTextArea" name="whitelistedWebsites" rows="7" cols="50"></textarea><br>
+            </form>
+            <button id="saveWhitelistButton" type="button">Save Whitelist</button>
+            <br>
+    
+            <h2>Tracking Settings</h2>
+            <input id="enableWebsiteTrackingCheckbox" type="checkbox">
+            <label for="enableWebsiteTrackingCheckbox">Enable website tracking</label>
+            <br>
+            <br>
+    
+            <h2>Additional Options:</h2>
+            <form>
+                <label for="receivedFromNativeAppTextArea">Received Blocked Websites:</label><br>
+                <textarea id="receivedFromNativeAppTextArea" name="blockedWebsites" rows="7" cols="50"></textarea><br>
+            </form>
+            <button id="testButton" type="button">Test Button</button>
+            <br>
+            <br>
+            <button id="openKlausButton" type="button">Open Desktop Klaus</button>
+        </div>
     </div>
-</div>
 </body>
 
 </html>

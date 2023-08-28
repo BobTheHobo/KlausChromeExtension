@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Klaus Homepage</title>
-    <script type="module" src="../contentScripts/klausHomepage.js"></script>
-    <link rel="stylesheet" href="../css/klausHomepage.css">
 </head>
+
 <body>
     <div class="topnav">
         <div class="section" style="justify-content: flex-start;">
-            <a class="active" href="klausHomepage.html">Home</a>
+            <a class="active">Home</a>
         </div>
         <div class="section" style="justify-content: center;">
             <h1 class="headertext">Klaus<h1>
@@ -19,22 +18,46 @@
         </div>
     </div>
 
-    <div class="main">
-        <div class="clockandmantra">
-            <div class="clock-center">
-                <span id="clock"></span>
-            </div>
+    <div class="main centerall">
+        <div class="homepagecentergrid">
             <div class="greetingtext">
                 <span id="greeting">
                     <t>What's up</t>
                 </span>
             </div>
+
+            <div class="clock-center">
+                <span id="clock"></span>
+            </div>
         </div>
-        <button id="testFirestoreButton" type="button">Test Firestore</button>
+        <!-- <button id="testFirestoreButton" type="button">Test Firestore</button> -->
+
+        <div class="todopreview">
+            <div class="todopreviewheader">
+                <span>
+                    <h2>Here's your to-do:</h2>
+                </span>
+            </div>
+
+            <div class="todopreviewadder">
+                <input type="text" id="todoadderinput" placeholder="Add a new item...">
+                <button id="todoadderbutton" type="button">+</button>
+            </div>
+
+            <div class="todopreviewbody">
+                <ul id="todopreviewlist">
+                    <li class="todopreviewitem">
+                    </li>
+                </ul>
+            </div>
+        </div>
     </div>
 
     <div class="footer">
-        Klaus Homepage
+        <span>
+            <t>Blocking status is currently:</t>
+            <t id="blockingstatus">off</t>
+        </span>
     </div>
 </body>
 </html>

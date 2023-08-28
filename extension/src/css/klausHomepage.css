@@ -22,6 +22,10 @@ body {
     flex: 1;
     padding: 5px 12px;
     flex-direction: column;
+}
+
+.centerall {
+    display: flex;
     align-items: center;
     justify-content: center;
 }
@@ -83,34 +87,129 @@ body {
 
 /* footer */
 .footer {
-    background-color: #f1f1f1;
+    background-color: #ffffff;
     text-align: center;
 }
 
-.clockandmantra {
+.homepagecentergrid {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     grid-template-rows: 1fr 1fr;
     width: 100%;
     align-items: center;
     justify-content: center;
+    /* border: 1px solid orange; */
+
 }
 
 .clock-center {
     display: block;
     grid-column: 2 / span 1;
-    grid-row: 1 / span 1;
+    grid-row: 2 / span 1;
     text-align: center;
     font-size: 80px;
     font-weight: bold;
     color: #000000;
+    /* border: 1px solid green; */
 }
 
 .greetingtext {
     display: block;
     grid-column: 2 / span 1;
-    grid-row: 2 / span 1;
+    grid-row: 1 / span 1;
     text-align: center;
+    align-self: end;
     font-size: 50px;
     color:#000000;
+    /* border: 1px solid blue; */
+}
+
+.todopreview {
+    justify-content: end;
+    color:#000000;
+    /* border: 1px solid red; */
+}
+
+.todopreviewheader {
+    text-align: center;
+}
+
+/* todolist style */
+#todopreviewlist {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* todolist items */
+#todopreviewlist li {
+    cursor: pointer;
+    position: relative;
+    /* border: 1px solid green; */
+    padding: 0px 20px;
+
+    /* make the list items unselectable */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Darker background-color on hover */
+#todopreviewlist li:hover {
+    background: #ddd;
+}
+
+/* todolist items checked */
+#todopreviewlist li.checked {
+    background: #aaaaaa;
+    text-decoration: line-through;
+}
+
+.deletebutton, .checkbutton {
+    background: none;
+    border: none;
+    position: absolute;
+    margin: 0;
+    padding: 0px 5px;
+    font: inherit;
+}
+
+.deletebutton {
+    right: 0;
+    top: 0;
+
+}
+
+.deletebutton:hover {
+    background-color: #f44336;
+    color: white;
+}
+
+.checkbutton {
+    left: 0;
+    top: 0;
+}
+
+.checkbutton:hover {
+    background-color: #5cf436;
+    color: white;
+}
+
+#todoadderinput {
+    flex: 1;
+    padding: 0;
+    margin: 0;
+    outline: none;
+}
+
+#todoadderbutton {
+    margin-left: 5px;
+}
+
+.todopreviewadder {
+    display: flex;
+    flex-direction: row;
+    /* border: 1px solid #555555; */
+    padding: 0px 20px;
 }

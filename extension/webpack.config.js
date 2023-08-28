@@ -16,6 +16,11 @@ contentScripts = [
   "klausHomepage.js"
 ]
 
+//insert css here and in the css folder
+css = [
+  "klausHomepage.css"
+]
+
 //turns an array of script names into an array of paths
 function transformAllScriptNamesToPaths(scriptType, scriptNames) {
   return scriptNames.map(scriptName => {
