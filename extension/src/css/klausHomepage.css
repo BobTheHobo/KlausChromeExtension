@@ -113,15 +113,18 @@ body {
     /* border: 1px solid green; */
 }
 
-.greetingtext {
+.greetingcontainer {
     display: block;
     grid-column: 2 / span 1;
     grid-row: 1 / span 1;
     text-align: center;
     align-self: end;
+    /* border: 1px solid blue; */
+}
+
+#greetingtext {
     font-size: 50px;
     color:#000000;
-    /* border: 1px solid blue; */
 }
 
 .todopreview {
@@ -212,4 +215,24 @@ body {
     flex-direction: row;
     /* border: 1px solid #555555; */
     padding: 0px 20px;
+}
+
+.showonhover {
+    display: none;
+}
+
+.showonhover:hover {
+    display: block;
+}
+
+.options {
+    display: none;
+}
+
+.options::after {
+    
+}
+
+.options:hover {
+    display:block
 }

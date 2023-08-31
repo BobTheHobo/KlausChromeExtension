@@ -6,6 +6,7 @@ const testFirestoreButton = document.getElementById('testFirestoreButton');
 const addTodoButton = document.getElementById('todoadderbutton');
 const todoListPreview = document.getElementById('todopreviewlist');
 const todoInput = document.getElementById('todoadderinput');
+const greetingtext = document.getElementById('greetingtext');
 
 main()
 
@@ -19,6 +20,10 @@ function main() {
 
     setInterval(updateClock, 1000);
     updateClock();
+}
+
+function updateGreetingText(text) {
+    greetingtext.textContent = text;
 }
 
 
@@ -47,6 +52,32 @@ function addTodoItem() {
 
     //Resets input field
     document.getElementById("todoadderinput").value = "";
+}
+
+class todoItem {
+    constructor(text) {
+        this.createdTime = new Date();
+        this.modifiedTime = new Date();
+
+        this.deadline = null;
+        this.scheduled = false;
+        this.priority = 0;
+        this.tags = [];
+
+        this.recurring = false;
+        this.recurringInterval = null;
+        this.recurringEnd = null;
+        this.recurringCount = null;
+        this.recurringLast = null;
+        this.recurringNext = null;
+        this.recurringDone = false;
+
+        this.text = text;
+        this.checked = false;
+        this.archived = false;
+    }
+
+    
 }
 
 function createTodoItem(todoText) {
@@ -122,4 +153,8 @@ function restoreTodoList() {
             createTodoItem(item);
         });
     })
+}
+
+function optionsMenu() {
+    
 }
