@@ -229,9 +229,9 @@ body {
     display: none;
 }
 
-.options::after {
+/* .options::after {
     
-}
+} */
 
 .options:hover {
     display:block

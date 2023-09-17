@@ -14,6 +14,8 @@ const receivedFromNativeAppTextArea = document.getElementById("receivedFromNativ
 const openKlausButton = document.getElementById("openKlausButton")
 const enableWebsiteTrackingCheckbox = document.getElementById("enableWebsiteTrackingCheckbox")
 const openKlausOnNewTabCheckbox = document.getElementById("openKlausOnNewTabCheckbox")
+const homepageMessageTextArea = document.getElementById("homepageMessageTextArea")
+const saveHomepageMessageButton = document.getElementById("saveHomepageMessageButton")
 
 main()
 
@@ -25,6 +27,7 @@ function main() {
     saveWhitelistButton.addEventListener("click", saveWhitelist);
     testButton.addEventListener("click", testEvent);
     openKlausButton.addEventListener("click", openNativeKlaus);
+    saveHomepageMessageButton.addEventListener("click", saveHomepageMessage)
 
     enableWebsiteBlockingCheckbox.addEventListener("change", event => websiteBlockingEventHandler(event));
     scanEntireUrlCheckbox.addEventListener("change", event => scanEntireUrlEventListener(event));
@@ -77,6 +80,11 @@ function saveBlocklist() {
         console.log("Blocked websites saved to chrome sync storage")
     });
     saveBlocklistToFirestore(blocked)
+}
+
+function saveHomepageMessage() {
+    const homepageMessage = homepageMessageTextArea.value
+    updateHomepageMessage(homepageMessage)
 }
 
 function saveWhitelist() {
@@ -144,6 +152,14 @@ function storageChangeHandler(storageChangeData) {
     if (storageChangeData.openKlausOnNewTab) {
         openKlausOnNewTabCheckbox.checked = storageChangeData.openKlausOnNewTab.newValue
     }
+
+    if (storageChangeData.homepageConfig) {
+        const homepageConfig = storageChangeData.homepageConfig
+        console.log(homepageConfig.newValue)
+        if (homepageConfig.newValue.homepageWelcomeMessage) {
+            homepageMessageTextArea.value = homepageConfig.newValue.homepageWelcomeMessage
+        }
+    }
 }
 
 function loadAllDataFromChromeStorage() {
@@ -156,6 +172,16 @@ function loadAllDataFromChromeStorage() {
         updateWebsiteTrackingCheckbox(storageData);
         updateOpenKlausOnNewTabCheckbox(storageData);
     });
+    chrome.storage.local.get((storageData) => {
+        updateHomepageMessageText(storageData);
+    });
+}
+
+function updateHomepageMessageText(storageData) {
+    console.log(storageData)
+    if (storageData.homepageConfig.homepageWelcomeMessage) {
+        homepageMessageTextArea.value = storageData.homepageConfig.homepageWelcomeMessage
+    }
 }
 
 function updateWebsiteTrackingCheckbox(storageData) {

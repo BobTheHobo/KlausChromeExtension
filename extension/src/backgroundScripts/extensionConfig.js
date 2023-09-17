@@ -20,16 +20,14 @@ async function getHomepageConfig() {
     }
 }
 
-async function updateHomepageMessage(element, message) {
+async function updateHomepageMessage(message) {
     try{
         await updateHomepageConfig("homepageWelcomeMessage", message);
-        const config = await getHomepageConfig();
-        element.textContent = config.homepageWelcomeMessage;
     }catch(err){
         console.log(err);
     }
 }
 
 export {
-    updateHomepageMessage
+    updateHomepageMessage,
 }

@@ -8,13 +8,15 @@ const testFirestoreButton = document.getElementById('testFirestoreButton');
 const addTodoButton = document.getElementById('todoadderbutton');
 const todoListPreview = document.getElementById('todopreviewlist');
 const todoInput = document.getElementById('todoadderinput');
-const homepageMessage = document.getElementById('homepagemessage');
 const testButton = document.getElementById('testButton');
 
 main()
 
 function main() {
+    chrome.storage.onChanged.addListener(storageChangeData => storageChangeHander(storageChangeData));
+
     window.addEventListener("DOMContentLoaded", () => {
+
         // testFirestoreButton.addEventListener('click', testFirestore);
         addTodoButton.addEventListener('click', addTodoItem);
         todoListPreview.addEventListener('click', checkTodoItem);
@@ -22,14 +24,21 @@ function main() {
         testButton.addEventListener('click', testEvent);
 
         restoreTodoList();
+        loadHomepageConfig();
 
         setInterval(updateClock, 1000);
         updateClock();
     });
+} 
+
+function updateHomepageText(text) {
+    greetingtext.textContent = text;
 }
 
-function updateGreetingText(text) {
-    greetingtext.textContent = text;
+function loadHomepageConfig() {
+    chrome.storage.local.get("homepageConfig", config => {
+        updateHomepageText(config.homepageConfig.homepageWelcomeMessage)
+    })
 }
 
 
@@ -162,5 +171,15 @@ function restoreTodoList() {
 }
 
 function testEvent() {
-    updateHomepageMessage(homepageMessage, 'test');
+    updateHomepageMessage('test');
+}
+
+function storageChangeHander(storageChangeData) {
+    if (storageChangeData.homepageConfig.newValue.homepageWelcomeMessage) {
+        const newMessage = storageChangeData.homepageConfig.newValue.homepageWelcomeMessage;
+        updateHomepageText(newMessage);
+        console.log("Homepage message updated to " + newMessage)
+    }else{
+        console.log("chrome.storage changed but nothing done");
+    }
 }
