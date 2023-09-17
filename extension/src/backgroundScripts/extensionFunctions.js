@@ -38,6 +38,7 @@ function setBlockerEnabled(blockerEnabled) {
             text: "ON", //set badgetext to on
         });
     }
+    console.log("blocker enabled set to " + blockerEnabled)
 }
 
 //handles everything related to tabs and url info
@@ -94,9 +95,7 @@ function websiteBlocker(tabId, url) {
         urlString = url.hostname.toString();
     }
 
-    console.log("Scanning " + url + " for blocked websites")
-
-    console.log(websiteBlocklist.find(domain => urlString.includes(domain)))
+    console.log("Scanning " + urlString + " for blocked websites")
 
     if (websiteBlocklist.find(domain => urlString.includes(domain))) { //Sees if the url has been blocked
         createNotification("Klaus blocked a website", "Klaus blocked " + urlString)

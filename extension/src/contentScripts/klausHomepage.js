@@ -2,23 +2,30 @@ require('../css/klausHomepage.css')
 
 import { testFirestore } from '../backgroundScripts/firebaseFunctions.js';
 
+import { updateHomepageMessage } from '../backgroundScripts/extensionConfig.js';
+
 const testFirestoreButton = document.getElementById('testFirestoreButton');
 const addTodoButton = document.getElementById('todoadderbutton');
 const todoListPreview = document.getElementById('todopreviewlist');
 const todoInput = document.getElementById('todoadderinput');
+const homepageMessage = document.getElementById('homepagemessage');
+const testButton = document.getElementById('testButton');
 
 main()
 
 function main() {
-    // testFirestoreButton.addEventListener('click', testFirestore);
-    addTodoButton.addEventListener('click', addTodoItem);
-    todoListPreview.addEventListener('click', checkTodoItem);
-    todoInput.addEventListener('keyup', addTodoOnEnter);
+    window.addEventListener("DOMContentLoaded", () => {
+        // testFirestoreButton.addEventListener('click', testFirestore);
+        addTodoButton.addEventListener('click', addTodoItem);
+        todoListPreview.addEventListener('click', checkTodoItem);
+        todoInput.addEventListener('keyup', addTodoOnEnter);
+        testButton.addEventListener('click', testEvent);
 
-    restoreTodoList();
+        restoreTodoList();
 
-    setInterval(updateClock, 1000);
-    updateClock();
+        setInterval(updateClock, 1000);
+        updateClock();
+    });
 }
 
 
@@ -122,4 +129,8 @@ function restoreTodoList() {
             createTodoItem(item);
         });
     })
+}
+
+function testEvent() {
+    updateHomepageMessage(homepageMessage, 'test');
 }

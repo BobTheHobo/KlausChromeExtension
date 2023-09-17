@@ -1,33 +1,6 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 
-//insert background scripts here and in the backgroundScripts folder
-backgroundScripts = [
-  "nativeCommunication.js",
-  "extensionCommunication.js",
-  "extensionFunctions.js",
-  "setup.js",
-  "firebaseSetup.js",
-]
-
-//insert content scripts here and in the contentScripts folder
-contentScripts = [
-  "options.js",
-  "klausHomepage.js"
-]
-
-//insert css here and in the css folder
-css = [
-  "klausHomepage.css"
-]
-
-//turns an array of script names into an array of paths
-function transformAllScriptNamesToPaths(scriptType, scriptNames) {
-  return scriptNames.map(scriptName => {
-    return "./src/" + scriptType + "/" + scriptName
-  })
-}
-
 module.exports = {
   mode: 'development',
   devtool: 'cheap-module-source-map',
