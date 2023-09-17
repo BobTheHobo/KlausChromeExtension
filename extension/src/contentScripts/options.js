@@ -1,6 +1,7 @@
 require('../css/klausHomepage.css')
 
 import { saveBlocklistToFirestore } from "../backgroundScripts/firebaseFunctions";
+import { updateHomepageMessage } from "../backgroundScripts/extensionConfig";
 
 const blockedWebsitesTextArea = document.getElementById("blockedWebsitesTextArea");
 const whitelistTextArea = document.getElementById("whitelistTextArea");
@@ -17,6 +18,7 @@ const openKlausOnNewTabCheckbox = document.getElementById("openKlausOnNewTabChec
 main()
 
 function main() {
+    
     refreshBlocklistFromNative(); //updates blocklist when the options popup/page is opened
 
     saveBlocklistButton.addEventListener("click", saveBlocklist);
