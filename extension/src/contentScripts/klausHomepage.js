@@ -41,16 +41,32 @@ function loadHomepageConfig() {
     })
 }
 
-
-function updateClock() {
+function updateTime() {
     const now = new Date();
     const hours = now.getHours().toString().padStart(2, '0');
     const minutes = now.getMinutes().toString().padStart(2, '0');
     const seconds = now.getSeconds().toString().padStart(2, '0');
     const timeString = `${hours}:${minutes}:${seconds}`;
     
-
     document.getElementById('clock').textContent = timeString;
+}
+
+function updateDate() {
+    const now = new Date();
+    const day = now.getDate().toString().padStart(2,"0");
+    const month = now.getMonth().toString().padStart(2,"0");
+    const year = now.getFullYear().toString().padStart(4,"0");
+    const dayOfWeekStrings = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    const dayOfWeek = dayOfWeekStrings[now.getDay()];
+
+    const dateString = `${dayOfWeek} ${month}/${day}/${year}`;
+
+    document.getElementById('date').textContent = dateString;
+}
+
+function updateClock() {
+    updateTime();
+    updateDate();
 }
 
 function addTodoItem() {
