@@ -12,6 +12,7 @@ html, body {
 
 body {
     min-height: 100vh;
+    max-height: 100vh;
     width: 100%;
     display: flex;
     flex-flow: column;
@@ -24,6 +25,7 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
 }
 
 /* website header */
@@ -37,7 +39,6 @@ body {
 .topnav {
     display: flex;
     width: 100%;
-    overflow: hidden;
     background-color: rgb(255, 255, 255);
     height: 3rem;
     align-items: top;
@@ -131,26 +132,32 @@ body {
     color:#000000;
 }
 
+.homepagegrid {
+    display: grid;
+    flex: 1;
+    grid-template-rows: minmax(0,33%) minmax(0,33%) minmax(0,33%);
+    align-items: center;
+    justify-items: center;
+    overflow: hidden;
+}
+
 .todopreview {
     grid-row: 3 / span 1;
     color:#000000;
     display: flex;
     flex-direction: column;
     margin-top: auto;
-    overflow: scroll;
+    max-height: 100%;
     /* border: 1px solid red; */
-}
-
-.homepagegrid {
-    display: grid;
-    flex: 1;
-    grid-template-rows: repeat(3, 0.9fr);
-    align-items: center;
-    justify-items: center;
 }
 
 .todopreviewheader {
     text-align: center;
+}
+
+.todopreviewbody {
+    overflow-y: scroll;
+    height: 100%;
 }
 
 /* todolist style */
@@ -251,4 +258,12 @@ body {
 
 .options:hover {
     display:block
+}
+
+
+.options-page {
+    width: 100%;
+    padding: 5px 12px;
+    flex-direction: column;
+    overflow-y: scroll;
 }
