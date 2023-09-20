@@ -9,6 +9,7 @@ const addTodoButton = document.getElementById('todoadderbutton');
 const todoListPreview = document.getElementById('todopreviewlist');
 const todoInput = document.getElementById('todoadderinput');
 const testButton = document.getElementById('testButton');
+const optionHovers = document.querySelectorAll('.showonhover');
 
 main()
 
@@ -25,6 +26,7 @@ function main() {
 
         restoreTodoList();
         loadHomepageConfig();
+        createOptionHovers();
 
         setInterval(updateClock, 1000);
         updateClock();
@@ -198,4 +200,10 @@ function storageChangeHander(storageChangeData) {
     }else{
         console.log("chrome.storage changed but nothing done");
     }
+}
+
+function createOptionHovers() {
+    optionHovers.forEach(optionHover => {
+        optionHover.textContent = "⋯";
+    });
 }

@@ -240,24 +240,30 @@ body {
     padding: 0px 20px;
 }
 
+.hoverable {
+    display: inline-block;
+    position: relative;
+}
+
 .showonhover {
-    display: none;
+    user-select: none;
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translate(0, -50%);
+    opacity: 0;
+    transition: all 250ms;
+    font-size: 20px;
+    text-align: center;
+    &:hover {
+        text-decoration: underline;
+    }
 }
 
-.showonhover:hover {
-    display: block;
-}
-
-.options {
-    display: none;
-}
-
-/* .options::after {
-    
-} */
-
-.options:hover {
-    display:block
+.hoverable:hover > .showonhover {
+    transform: translate(150%, -50%);
+    font-size: 30px;
+    opacity: 1;
 }
 
 
