@@ -188,8 +188,13 @@ function restoreTodoList() {
     })
 }
 
+function printText(message) {
+    console.log(message)
+}
+
 function testEvent() {
-    updateHomepageMessage('test');
+    // updateHomepageMessage('test');
+    new optionDropdown(this, {'test': () => printText('test'), 'test2': () => printText('test2')})
 }
 
 function storageChangeHander(storageChangeData) {
@@ -206,4 +211,64 @@ function createOptionHovers() {
     optionHovers.forEach(optionHover => {
         optionHover.textContent = "⋯";
     });
+}
+
+class optionDropdown {
+    constructor(parent, optionNameFunctionPairs) {
+        this.parent = parent;
+        this.nameFunctionPairs = optionNameFunctionPairs;
+        this.optionDropdownList = document.createElement('ul');
+        this.checkIfCreated();
+    }
+
+    checkIfCreated() {
+        if (this.parent.getAttribute('data-dropdown-created') === 'false' || this.parent.getAttribute('data-dropdown-created') === null) {
+            this.create();
+        }else if (this.parent.getAttribute('data-dropdown-created') === 'true') {
+            destroyDropdowns();
+            this.parent.setAttribute('data-dropdown-created', 'false')
+        }
+    }
+
+    create() {
+        const names = Object.keys(this.nameFunctionPairs);
+        const functions = Object.values(this.nameFunctionPairs);
+        this.optionDropdownList.setAttribute('data-dropdown',"true");
+        
+        for(let i=0; i<names.length; i++) {
+            let option = document.createElement('li');
+            let optionText = document.createElement('t');
+            optionText.textContent = names[i];
+            option.appendChild(optionText);
+            option.addEventListener('click', ()=> {
+                functions[i]();
+            })
+            this.optionDropdownList.appendChild(option);
+        };
+
+        this.parent.appendChild(this.optionDropdownList);
+        this.parent.setAttribute('data-dropdown-created', 'true')
+        addOutsideClickListener();
+        event.stopPropagation();
+        console.log('created')
+    }
+}
+
+function destroyDropdowns() {
+    const dropdowns = document.querySelectorAll('[data-dropdown]');
+    dropdowns.forEach(dropdown => {
+        console.log('destroying')
+        dropdown.remove();
+    });
+    removeOutsideClickListener();
+}
+
+function addOutsideClickListener() {
+    document.addEventListener('click', destroyDropdowns);   
+    console.log('added');
+}
+
+function removeOutsideClickListener() {
+    document.removeEventListener('click', destroyDropdowns);
+    console.log('removed')
 }
