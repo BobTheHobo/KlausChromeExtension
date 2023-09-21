@@ -260,7 +260,10 @@ body {
     }
 }
 
-.hoverable:hover > .showonhover {
+.hoverable:hover > .showonhover, .hoverable:focus > .showonhover, .hoverable:active > .showonhover,
+.showonhover:hover, .showonhover:focus, .showonhover:active, 
+.keepopen
+{
     transform: translate(150%, -50%);
     font-size: 30px;
     opacity: 1;
@@ -272,4 +275,13 @@ body {
     padding: 5px 12px;
     flex-direction: column;
     overflow-y: scroll;
+}
+
+.option-dropdown-container {
+    position: absolute;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin: 5px 0px;
 }

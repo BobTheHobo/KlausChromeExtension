@@ -210,30 +210,80 @@ function storageChangeHander(storageChangeData) {
 function createOptionHovers() {
     optionHovers.forEach(optionHover => {
         optionHover.textContent = "⋯";
+        optionHover.addEventListener('click', () => {
+            optionHoverClickHandler(optionHover);
+        })
     });
+}
+
+function optionHoverClickHandler(optionHover) {
+    if (optionHover.classList.contains('keepopen')) {
+        return;
+    }
+
+    new optionDropdown(optionHover, {'test': () => printText('test'), 'test2': () => printText('test2')})
+    toggleKeepOptionHoverFromClosing(optionHover); //toggles keepopen on
+
+    new addDocumentClickListener(function () {
+        toggleKeepOptionHoverFromClosing(optionHover); //toggles keepopen off once another click is registered
+        this.abort();
+    }, 
+    true); //invoked only once
+}
+
+function toggleKeepOptionHoverFromClosing(element) {
+    element.classList.toggle('keepopen');
+}
+
+class addDocumentClickListener {
+    constructor(func, once=false) {
+        this.functionToExecute = func;
+        this.invokedOnlyOnce = once;
+        this.abortController = new AbortController();
+        this.addClickListener();
+    }
+
+    addClickListener() {
+        document.addEventListener('click', (event) => {
+            this.event = event;
+            this.functionToExecute();
+            if (this.invokedOnlyOnce) {
+                this.abortController.abort();
+            }
+        }, {
+            signal: this.abortController.signal,
+            once: this.invokedOnlyOnce
+        })
+    }
+
+    abort() {
+        this.abortController.abort();
+    }
 }
 
 class optionDropdown {
     constructor(parent, optionNameFunctionPairs) {
         this.parent = parent;
         this.nameFunctionPairs = optionNameFunctionPairs;
-        this.optionDropdownList = document.createElement('ul');
+        this.dropdownContainer = document.createElement('div');
+        this.removeListener = new AbortController();
         this.checkIfCreated();
     }
 
     checkIfCreated() {
         if (this.parent.getAttribute('data-dropdown-created') === 'false' || this.parent.getAttribute('data-dropdown-created') === null) {
-            this.create();
-        }else if (this.parent.getAttribute('data-dropdown-created') === 'true') {
-            destroyDropdowns();
-            this.parent.setAttribute('data-dropdown-created', 'false')
+            this.createDropdown();
+            this.addOutsideClickListener();
+            event.stopPropagation();
         }
     }
 
-    create() {
+    createDropdown() {
         const names = Object.keys(this.nameFunctionPairs);
         const functions = Object.values(this.nameFunctionPairs);
-        this.optionDropdownList.setAttribute('data-dropdown',"true");
+        this.dropdownContainer.className = 'option-dropdown-container';
+        const optionDropdownList = document.createElement('ul');
+        optionDropdownList.setAttribute('data-dropdown',"true");
         
         for(let i=0; i<names.length; i++) {
             let option = document.createElement('li');
@@ -243,32 +293,33 @@ class optionDropdown {
             option.addEventListener('click', ()=> {
                 functions[i]();
             })
-            this.optionDropdownList.appendChild(option);
+            optionDropdownList.appendChild(option);
+            this.dropdownContainer.appendChild(optionDropdownList)
         };
 
-        this.parent.appendChild(this.optionDropdownList);
+        this.parent.appendChild(this.dropdownContainer);
         this.parent.setAttribute('data-dropdown-created', 'true')
-        addOutsideClickListener();
-        event.stopPropagation();
-        console.log('created')
     }
-}
 
-function destroyDropdowns() {
-    const dropdowns = document.querySelectorAll('[data-dropdown]');
-    dropdowns.forEach(dropdown => {
-        console.log('destroying')
-        dropdown.remove();
-    });
-    removeOutsideClickListener();
-}
+    addOutsideClickListener() {
+        const clickEval = this.clickEval.bind(this);
+        this.listener = new addDocumentClickListener(function() {
+            clickEval(this.event);
+        })
+    }
 
-function addOutsideClickListener() {
-    document.addEventListener('click', destroyDropdowns);   
-    console.log('added');
-}
+    clickEval(e) {
+        if(e.target === this.dropdownContainer){
+            return;
+        }
+        if(this.dropdownContainer.parentElement.getAttribute('data-dropdown-created')) {
+            this.destroy();
+        }
+    }
 
-function removeOutsideClickListener() {
-    document.removeEventListener('click', destroyDropdowns);
-    console.log('removed')
+    destroy() {
+        this.dropdownContainer.remove();
+        this.parent.setAttribute('data-dropdown-created', 'false')
+        this.listener.abort();
+    }
 }
