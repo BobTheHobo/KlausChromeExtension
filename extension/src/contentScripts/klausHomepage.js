@@ -9,7 +9,6 @@ const addTodoButton = document.getElementById('todoadderbutton');
 const todoListPreview = document.getElementById('todopreviewlist');
 const todoInput = document.getElementById('todoadderinput');
 const testButton = document.getElementById('testButton');
-const optionHovers = document.querySelectorAll('.showonhover');
 
 main()
 
@@ -26,7 +25,7 @@ function main() {
 
         restoreTodoList();
         loadHomepageConfig();
-        createOptionHovers();
+        new optionHover();
 
         setInterval(updateClock, 1000);
         updateClock();
@@ -207,34 +206,6 @@ function storageChangeHander(storageChangeData) {
     }
 }
 
-function createOptionHovers() {
-    optionHovers.forEach(optionHover => {
-        optionHover.textContent = "⋯";
-        optionHover.addEventListener('click', () => {
-            optionHoverClickHandler(optionHover);
-        })
-    });
-}
-
-function optionHoverClickHandler(optionHover) {
-    if (optionHover.classList.contains('keepopen')) {
-        return;
-    }
-
-    new optionDropdown(optionHover, {'test': () => printText('test'), 'test2': () => printText('test2')})
-    toggleKeepOptionHoverFromClosing(optionHover); //toggles keepopen on
-
-    new addDocumentClickListener(function () {
-        toggleKeepOptionHoverFromClosing(optionHover); //toggles keepopen off once another click is registered
-        this.abort();
-    }, 
-    true); //invoked only once
-}
-
-function toggleKeepOptionHoverFromClosing(element) {
-    element.classList.toggle('keepopen');
-}
-
 class addDocumentClickListener {
     constructor(func, once=false) {
         this.functionToExecute = func;
@@ -261,6 +232,44 @@ class addDocumentClickListener {
     }
 }
 
+class optionHover {
+    constructor() {
+        this.optionHovers = document.querySelectorAll('.showonhover');
+        this.createOptionHovers();
+    }
+
+    createOptionHovers() {
+        this.optionHovers.forEach(optionHover => {
+            optionHover.textContent = "⋯";
+            optionHover.addEventListener('click', () => {
+                this.optionHoverClickHandler(optionHover);
+            })
+        });
+    }
+
+    toggleKeepOptionHoverFromClosing(element) {
+        element.classList.toggle('keepopen');
+    }
+
+    optionHoverClickHandler(optionHover) {
+        if (optionHover.classList.contains('keepopen')) {
+            return;
+        }
+    
+        new optionDropdown(optionHover, {'test': () => printText('test'), 'test2': () => printText('test2')})
+        
+        const toggle = this.toggleKeepOptionHoverFromClosing.bind(this);
+        
+        toggle(optionHover); //toggles keepopen on
+        new addDocumentClickListener(function () {
+            toggle(optionHover); //toggles keepopen off once another click is registered
+            this.abort();
+        }, 
+        true); //invoked only once
+    }
+
+}
+
 class optionDropdown {
     constructor(parent, optionNameFunctionPairs) {
         this.parent = parent;
@@ -281,6 +290,7 @@ class optionDropdown {
     createDropdown() {
         const names = Object.keys(this.nameFunctionPairs);
         const functions = Object.values(this.nameFunctionPairs);
+        
         this.dropdownContainer.className = 'option-dropdown-container';
         const optionDropdownList = document.createElement('ul');
         optionDropdownList.setAttribute('data-dropdown',"true");
