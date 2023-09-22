@@ -240,7 +240,13 @@ class optionHover {
 
     createOptionHovers() {
         this.optionHovers.forEach(optionHover => {
-            optionHover.textContent = "⋯";
+            const rotateSpan = document.createElement('span');
+            rotateSpan.className = 'click-rotate';
+            const text = document.createElement('t');
+            text.className = 'option-hover-text';
+            text.textContent = ">";
+            rotateSpan.appendChild(text);
+            optionHover.appendChild(rotateSpan);
             optionHover.addEventListener('click', () => {
                 this.optionHoverClickHandler(optionHover);
             })
@@ -251,18 +257,26 @@ class optionHover {
         element.classList.toggle('keepopen');
     }
 
+    toggleRotate(element) {
+        const rotateSpan = element.querySelector('.click-rotate')
+        rotateSpan.classList.toggle('rotate');
+    }
+
     optionHoverClickHandler(optionHover) {
         if (optionHover.classList.contains('keepopen')) {
             return;
         }
     
         new optionDropdown(optionHover, {'test': () => printText('test'), 'test2': () => printText('test2')})
-        
-        const toggle = this.toggleKeepOptionHoverFromClosing.bind(this);
-        
-        toggle(optionHover); //toggles keepopen on
+        const toggleKeepFromClosing = this.toggleKeepOptionHoverFromClosing.bind(this);
+        const toggleRotate = this.toggleRotate.bind(this);
+
+        toggleKeepFromClosing(optionHover); //toggles keepopen on
+        toggleRotate(optionHover);
+
         new addDocumentClickListener(function () {
-            toggle(optionHover); //toggles keepopen off once another click is registered
+            toggleKeepFromClosing(optionHover); //toggles keepopen off once another click is registered
+            toggleRotate(optionHover);
             this.abort();
         }, 
         true); //invoked only once
@@ -293,10 +307,13 @@ class optionDropdown {
         
         this.dropdownContainer.className = 'option-dropdown-container';
         const optionDropdownList = document.createElement('ul');
+        optionDropdownList.className = 'option-dropdown-list';
         optionDropdownList.setAttribute('data-dropdown',"true");
         
         for(let i=0; i<names.length; i++) {
             let option = document.createElement('li');
+            option.className = 'option-dropdown-item'
+
             let optionText = document.createElement('t');
             optionText.textContent = names[i];
             option.appendChild(optionText);
@@ -309,6 +326,8 @@ class optionDropdown {
 
         this.parent.appendChild(this.dropdownContainer);
         this.parent.setAttribute('data-dropdown-created', 'true')
+        this.dropdownContainer.offsetWidth; //forces reflow, triggering transition
+        this.dropdownContainer.classList.add('option-dropdown-animation');
     }
 
     addOutsideClickListener() {
