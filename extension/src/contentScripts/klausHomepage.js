@@ -25,7 +25,8 @@ function main() {
 
         restoreTodoList();
         loadHomepageConfig();
-        new optionHover();
+        new optionHover().createOptionHovers();
+        new hoverable().addHoverableClickListeners();
 
         setInterval(updateClock, 1000);
         updateClock();
@@ -232,10 +233,31 @@ class addDocumentClickListener {
     }
 }
 
+class hoverable {
+    constructor() {
+        this.hoverables = document.querySelectorAll('.hoverable');
+    }
+
+    triggerHoverable(element) {
+        const showOnHoverSpan = element.querySelector('.showonhover');
+        const hover = new optionHover();
+        hover.optionHoverClickHandler(showOnHoverSpan); //uses optionHover's click handler
+    }
+
+    addHoverableClickListeners() {
+        this.hoverables.forEach(hoverable => {
+            hoverable.addEventListener('click', () => {
+                const triggerHoverable = this.triggerHoverable.bind(this);
+                
+                triggerHoverable(hoverable);
+            })
+        })
+    }
+}
+
 class optionHover {
     constructor() {
         this.optionHovers = document.querySelectorAll('.showonhover');
-        this.createOptionHovers();
     }
 
     createOptionHovers() {

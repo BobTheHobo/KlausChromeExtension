@@ -300,7 +300,8 @@ body {
 .showonhover:hover, 
 .showonhover:focus, 
 .showonhover:active, 
-.keepopen, .on
+.openhover > .showonhover,
+.keepopen
 {
     transform: translate(150%, -50%);
     font-size: 30px;
