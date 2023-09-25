@@ -16,6 +16,9 @@ const enableWebsiteTrackingCheckbox = document.getElementById("enableWebsiteTrac
 const openKlausOnNewTabCheckbox = document.getElementById("openKlausOnNewTabCheckbox")
 const homepageMessageTextArea = document.getElementById("homepageMessageTextArea")
 const saveHomepageMessageButton = document.getElementById("saveHomepageMessageButton")
+const homepageColorPicker = document.getElementById("homepageBackgroundColorPicker")
+const saveHomepageColorButton = document.getElementById("saveHomepageBackgroundColorButton")
+
 
 main()
 
@@ -27,7 +30,8 @@ function main() {
     saveWhitelistButton.addEventListener("click", saveWhitelist);
     testButton.addEventListener("click", testEvent);
     openKlausButton.addEventListener("click", openNativeKlaus);
-    saveHomepageMessageButton.addEventListener("click", saveHomepageMessage)
+    saveHomepageMessageButton.addEventListener("click", saveHomepageMessage);
+    saveHomepageColorButton.addEventListener("click", updateBackgroundColor);
 
     enableWebsiteBlockingCheckbox.addEventListener("change", event => websiteBlockingEventHandler(event));
     scanEntireUrlCheckbox.addEventListener("change", event => scanEntireUrlEventListener(event));
@@ -240,4 +244,9 @@ function updateScanEntireUrl(storageData) {
         chrome.storage.sync.set({ scanEntireUrl: false });
         console.log("scanEntireUrl reset to false");
     }
+}
+
+function updateBackgroundColor(){
+    const color = homepageColorPicker.value;
+    document.body.style.backgroundColor = color;
 }
