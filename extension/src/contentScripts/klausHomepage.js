@@ -9,6 +9,11 @@ const addTodoButton = document.getElementById('todoadderbutton');
 const todoListPreview = document.getElementById('todopreviewlist');
 const todoInput = document.getElementById('todoadderinput');
 const testButton = document.getElementById('testButton');
+const hoverableClock = document.getElementById('hoverable-clock');
+const hoverableGreeting = document.getElementById('hoverable-greeting');
+const hoverableDate = document.getElementById('hoverable-date');
+const testNameFunctionPair = {'test': () => printText('test'), 'test2': () => printText('test2')}
+
 
 main()
 
@@ -25,8 +30,10 @@ function main() {
 
         restoreTodoList();
         loadHomepageConfig();
-        new optionHover().createOptionHovers();
-        new hoverable().addHoverableClickListeners();
+
+        new Hoverable(hoverableGreeting);
+        new Hoverable(hoverableClock);
+        new Hoverable(hoverableDate);
 
         setInterval(updateClock, 1000);
         updateClock();
@@ -194,7 +201,6 @@ function printText(message) {
 
 function testEvent() {
     // updateHomepageMessage('test');
-    new optionDropdown(this, {'test': () => printText('test'), 'test2': () => printText('test2')})
 }
 
 function storageChangeHander(storageChangeData) {
@@ -207,12 +213,16 @@ function storageChangeHander(storageChangeData) {
     }
 }
 
-class addDocumentClickListener {
+class DocumentClickListener {
     constructor(func, once=false) {
-        this.functionToExecute = func;
+        this.functionToExecute = func || (() => {});
         this.invokedOnlyOnce = once;
         this.abortController = new AbortController();
-        this.addClickListener();
+    }
+
+    setFunctionToExecute(func, once=false) {
+        this.functionToExecute = func;
+        this.invokedOnlyOnce = once;
     }
 
     addClickListener() {
@@ -233,144 +243,157 @@ class addDocumentClickListener {
     }
 }
 
-class hoverable {
-    constructor() {
-        this.hoverables = document.querySelectorAll('.hoverable');
+
+//heiarchy (parent to child): Hoverable -> FlyoutButton -> OptionDropdown
+class Hoverable {
+    constructor(element) {
+        this.element = element;
+        this.childFlyoutButton = this.createChildFlyoutButton(); //creates flyoutButton on instantiation
+        this.addClickHandler();
     }
 
-    triggerHoverable(element) {
-        const showOnHoverSpan = element.querySelector('.showonhover');
-        const hover = new optionHover();
-        hover.optionHoverClickHandler(showOnHoverSpan); //uses optionHover's click handler
-    }
-
-    addHoverableClickListeners() {
-        this.hoverables.forEach(hoverable => {
-            hoverable.addEventListener('click', () => {
-                const triggerHoverable = this.triggerHoverable.bind(this);
-                
-                triggerHoverable(hoverable);
-            })
+    addClickHandler() {
+        this.element.addEventListener('click', () => {
+            //just have flyoutbutton handle click
+            this.childFlyoutButton.handleClick();
+            event.stopPropagation();
         })
     }
+
+    handleHover() {
+        //on hover, just show the flyoutButton (this is handled by css)
+    }
+
+    createChildFlyoutButton() {
+        return new FlyoutButton(this.element);
+    }
 }
 
-class optionHover {
-    constructor() {
-        this.optionHovers = document.querySelectorAll('.showonhover');
+class FlyoutButton {
+    constructor(parent) {
+        this.parentHoverable = parent;
+        [this.flyoutButton, this.rotateSpan] = this.createFlyoutButton();
+        this.childOptionDropdown = this.createChildOptionDropdown(testNameFunctionPair); //creates optionDropdown on instantiation
+        this.opened = false;
     }
 
-    createOptionHovers() {
-        this.optionHovers.forEach(optionHover => {
-            const rotateSpan = document.createElement('span');
-            rotateSpan.className = 'click-rotate';
-            const text = document.createElement('t');
-            text.className = 'option-hover-text';
-            text.textContent = ">";
-            rotateSpan.appendChild(text);
-            optionHover.appendChild(rotateSpan);
-            optionHover.addEventListener('click', () => {
-                this.optionHoverClickHandler(optionHover);
-            })
-        });
+    closeFlyoutAndDropdown() {
+        this.childOptionDropdown.removeOptionDropdown();
+        this.keepFlyoutOpen(false);
+        this.rotateTransition(false);
+        this.opened.false;
     }
 
-    toggleKeepOptionHoverFromClosing(element) {
-        element.classList.toggle('keepopen');
+    openFlyoutAndDropdown() {
+        this.childOptionDropdown.createOptionDropdown();
+        this.keepFlyoutOpen(true);
+        this.rotateTransition(true);
+        this.opened = true;
     }
 
-    toggleRotate(element) {
-        const rotateSpan = element.querySelector('.click-rotate')
-        rotateSpan.classList.toggle('rotate');
-    }
+    handleClick() {
+        const closeFlyoutAndDropdown = this.closeFlyoutAndDropdown.bind(this);
+        if(this.opened) {
+            this.closeFlyoutAndDropdown();
+        }else{
+            this.openFlyoutAndDropdown();
 
-    optionHoverClickHandler(optionHover) {
-        if (optionHover.classList.contains('keepopen')) {
-            return;
+            const documentClickListener = new DocumentClickListener(function () {
+                //on click outside, remove optionDropdown
+                closeFlyoutAndDropdown();
+                this.abort();
+            }, true);
+            documentClickListener.addClickListener();
         }
-    
-        new optionDropdown(optionHover, {'test': () => printText('test'), 'test2': () => printText('test2')})
-        const toggleKeepFromClosing = this.toggleKeepOptionHoverFromClosing.bind(this);
-        const toggleRotate = this.toggleRotate.bind(this);
-
-        toggleKeepFromClosing(optionHover); //toggles keepopen on
-        toggleRotate(optionHover);
-
-        new addDocumentClickListener(function () {
-            toggleKeepFromClosing(optionHover); //toggles keepopen off once another click is registered
-            toggleRotate(optionHover);
-            this.abort();
-        }, 
-        true); //invoked only once
     }
 
+    handleHover() {
+        //on hover, just highlight (this is handled by css)
+    }
+
+    keepFlyoutOpen(state) {
+        if(state) {
+            this.flyoutButton.classList.add('keepopen');
+            this.opened = true;
+        }
+        else if(!state){
+            this.flyoutButton.classList.remove('keepopen');
+            this.opened = false;
+        }
+    }
+
+    rotateTransition(state) {
+        if(state) {
+            this.rotateSpan.classList.add('rotate-transition');
+        }else{
+            this.rotateSpan.classList.remove('rotate-transition');
+        }
+    }
+
+    createFlyoutButton() {
+        const flyoutButton = document.createElement('span');
+        flyoutButton.className = 'flyout-button-container';
+
+        const rotateSpan = document.createElement('span');
+        rotateSpan.className = 'flyout-button-rotate';
+
+        const text = document.createElement('t');
+        text.className = 'option-hover-text';
+        text.textContent = ">";
+
+        rotateSpan.appendChild(text);
+        flyoutButton.appendChild(rotateSpan);
+        this.parentHoverable.appendChild(flyoutButton);
+
+        return [flyoutButton, rotateSpan];
+    }
+
+    createChildOptionDropdown(optionNameFunctionPairs) {
+        return new OptionDropdown(this.flyoutButton, optionNameFunctionPairs);
+    }
 }
 
-class optionDropdown {
+class OptionDropdown {
     constructor(parent, optionNameFunctionPairs) {
-        this.parent = parent;
-        this.nameFunctionPairs = optionNameFunctionPairs;
-        this.dropdownContainer = document.createElement('div');
-        this.removeListener = new AbortController();
-        this.checkIfCreated();
+        this.parentFlyoutButton = parent;
+        this.dropdown = null;
+        this.optionNameFunctionPairs = optionNameFunctionPairs;
     }
 
-    checkIfCreated() {
-        if (this.parent.getAttribute('data-dropdown-created') === 'false' || this.parent.getAttribute('data-dropdown-created') === null) {
-            this.createDropdown();
-            this.addOutsideClickListener();
-            event.stopPropagation();
-        }
-    }
+    createOptionDropdown() {
+        const dropdownContainer = document.createElement('span')
+        dropdownContainer.className = 'option-dropdown-container';
 
-    createDropdown() {
-        const names = Object.keys(this.nameFunctionPairs);
-        const functions = Object.values(this.nameFunctionPairs);
-        
-        this.dropdownContainer.className = 'option-dropdown-container';
         const optionDropdownList = document.createElement('ul');
         optionDropdownList.className = 'option-dropdown-list';
-        optionDropdownList.setAttribute('data-dropdown',"true");
+
+        const names = Object.keys(this.optionNameFunctionPairs);
+        const functions = Object.values(this.optionNameFunctionPairs);
         
         for(let i=0; i<names.length; i++) {
             let option = document.createElement('li');
             option.className = 'option-dropdown-item'
-
-            let optionText = document.createElement('t');
-            optionText.textContent = names[i];
-            option.appendChild(optionText);
             option.addEventListener('click', ()=> {
                 functions[i]();
             })
+
+            let optionText = document.createElement('t');
+            optionText.textContent = names[i];
+
+            option.appendChild(optionText);
             optionDropdownList.appendChild(option);
-            this.dropdownContainer.appendChild(optionDropdownList)
-        };
-
-        this.parent.appendChild(this.dropdownContainer);
-        this.parent.setAttribute('data-dropdown-created', 'true')
-        this.dropdownContainer.offsetWidth; //forces reflow, triggering transition
-        this.dropdownContainer.classList.add('option-dropdown-animation');
-    }
-
-    addOutsideClickListener() {
-        const clickEval = this.clickEval.bind(this);
-        this.listener = new addDocumentClickListener(function() {
-            clickEval(this.event);
-        })
-    }
-
-    clickEval(e) {
-        if(e.target === this.dropdownContainer){
-            return;
         }
-        if(this.dropdownContainer.parentElement.getAttribute('data-dropdown-created')) {
-            this.destroy();
-        }
+        dropdownContainer.appendChild(optionDropdownList);
+        this.parentFlyoutButton.appendChild(dropdownContainer);
+        
+        dropdownContainer.offsetWidth; //forces reflow, triggering transition  
+        dropdownContainer.classList.add('option-dropdown-animation');
+        this.dropdown = dropdownContainer;
+
+        return dropdownContainer;
     }
 
-    destroy() {
-        this.dropdownContainer.remove();
-        this.parent.setAttribute('data-dropdown-created', 'false')
-        this.listener.abort();
+    removeOptionDropdown() {
+        this.dropdown.remove();
     }
 }
