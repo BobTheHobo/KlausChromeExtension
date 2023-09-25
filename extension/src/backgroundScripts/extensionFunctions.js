@@ -66,7 +66,7 @@ function tabCreatedListener(tab) {
 // changes tab to Google's default new tab or Klaus new tab
 function updateNewTab(url) {
     chrome.storage.sync.get(storage => {
-        if(storage.openKlausOnNewTab) {
+        if(storage.homepageConfig["openKlausOnNewTab"]) {
             return //if openKlausOnNewTab is true, do nothing
         }
 
