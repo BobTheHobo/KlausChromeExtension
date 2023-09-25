@@ -248,7 +248,7 @@ body {
     text-align: center;
 }
 
-.showonhover {
+.flyout-button-container {
     user-select: none;
     position: absolute;
     display: flex;
@@ -269,7 +269,7 @@ body {
     }
 }
 
-.click-rotate {
+.flyout-button-rotate {
     display: flex;
     flex: 1;
     transform: rotate(0deg);
@@ -289,18 +289,18 @@ body {
         font-size: 20px;
         font-weight: bold;
     }
-    &.rotate {
+    &.rotate-transition {
         transform: rotate(180deg)
     }
 }
 
-.hoverable:hover > .showonhover, 
-.hoverable:focus > .showonhover, 
-.hoverable:active > .showonhover,
-.showonhover:hover, 
-.showonhover:focus, 
-.showonhover:active, 
-.openhover > .showonhover,
+.hoverable:hover > .flyout-button-container, 
+.hoverable:focus > .flyout-button-container, 
+.hoverable:active > .flyout-button-container,
+.flyout-button-container:hover, 
+.flyout-button-container:focus, 
+.flyout-button-container:active, 
+.openhover > .flyout-button-container,
 .keepopen
 {
     transform: translate(150%, -50%);
