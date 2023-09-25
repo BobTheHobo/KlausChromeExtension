@@ -28,10 +28,10 @@ function main() {
         saveBlocklistButton,
         whitelistTextArea,
         saveWhitelistButton,
-        scanEntireUrlCheckbox)
+        scanEntireUrlCheckbox
+    )
 
-    saveBlocklistButton.addEventListener("click", saveBlocklist);
-    saveWhitelistButton.addEventListener("click", saveWhitelist);
+
     testButton.addEventListener("click", testEvent);
     openKlausButton.addEventListener("click", openNativeKlaus);
     saveHomepageMessageButton.addEventListener("click", saveHomepageMessage);
