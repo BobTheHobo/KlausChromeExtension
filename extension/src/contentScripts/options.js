@@ -3,15 +3,19 @@ require('../css/klausHomepage.css')
 import { saveBlocklistToFirestore } from "../backgroundScripts/firebaseFunctions";
 import { updateHomepageMessage } from "../backgroundScripts/extensionConfig";
 
-const blockedWebsitesTextArea = document.getElementById("blockedWebsitesTextArea");
-const whitelistTextArea = document.getElementById("whitelistTextArea");
-const saveBlocklistButton = document.getElementById("saveBlocklistButton");
-const saveWhitelistButton = document.getElementById("saveWhitelistButton");
+//Website Blocker
 const enableWebsiteBlockingCheckbox = document.getElementById("enableWebsiteBlockingCheckbox");
+const blockedWebsitesTextArea = document.getElementById("blockedWebsitesTextArea");
+const saveBlocklistButton = document.getElementById("saveBlocklistButton");
+const whitelistTextArea = document.getElementById("whitelistTextArea");
+const saveWhitelistButton = document.getElementById("saveWhitelistButton");
 const scanEntireUrlCheckbox = document.getElementById("scanEntireUrlCheckbox");
-const testButton = document.getElementById("testButton");
+
+//Native Communication
 const receivedFromNativeAppTextArea = document.getElementById("receivedFromNativeAppTextArea");
 const openKlausButton = document.getElementById("openKlausButton")
+const testButton = document.getElementById("testButton");
+
 const enableWebsiteTrackingCheckbox = document.getElementById("enableWebsiteTrackingCheckbox")
 const openKlausOnNewTabCheckbox = document.getElementById("openKlausOnNewTabCheckbox")
 const homepageMessageTextArea = document.getElementById("homepageMessageTextArea")
@@ -20,10 +24,9 @@ const homepageColorPicker = document.getElementById("homepageBackgroundColorPick
 const saveHomepageColorButton = document.getElementById("saveHomepageBackgroundColorButton")
 
 function main() {
-    
-    refreshBlocklistFromNative(); //updates blocklist when the options popup/page is opened
 
-    new WebsiteBlocker(enableWebsiteBlockingCheckbox, 
+    new WebsiteBlocker(
+        enableWebsiteBlockingCheckbox, 
         blockedWebsitesTextArea,
         saveBlocklistButton,
         whitelistTextArea,
@@ -31,9 +34,14 @@ function main() {
         scanEntireUrlCheckbox
     )
 
+    // NativeCommunication is on hold for now
+    // new NativeCommunication(
+    //     receivedFromNativeAppTextArea,
+    //     openKlausButton, 
+    //     testButton
+    // ) 
 
-    testButton.addEventListener("click", testEvent);
-    openKlausButton.addEventListener("click", openNativeKlaus);
+
     saveHomepageMessageButton.addEventListener("click", saveHomepageMessage);
     saveHomepageColorButton.addEventListener("click", updateBackgroundColor);
 
@@ -56,58 +64,13 @@ function openKlausAsNewTabHandler(event) {
     chrome.storage.sync.set({ "openKlausOnNewTab" : openKlausOnNewTab })
 }
 
-//Klaus Communication Functions
-// 1. Send a message to the background
-async function sendMessageToBackground(action, message) {
-    const object = { action: action, message: message }
-    await chrome.runtime.sendMessage(object).then((response) =>
-        console.log(response)
-    )
-}
-
-function sendMessageToNative(message) {
-    sendMessageToBackground('sendToNative', message)
-}
-
-function refreshBlocklistFromNative() {
-    sendMessageToBackground('refreshBlocklistFromNative', '')
-}
-
-function openNativeKlaus() {
-    sendMessageToBackground('openNative', '')
-}
-
-function testEvent() {
-    console.log("Sending:  hello");
-    sendMessageToNative("hello")
-}
-
-function saveBlocklist() {
-    const blocked = blockedWebsitesTextArea.value.split("\n").map(s => s.trim()).filter(Boolean);
-    chrome.storage.sync.set({ "blockedWebsites": blocked }, () => {
-        console.log("Blocked websites saved to chrome sync storage")
-    });
-    saveBlocklistToFirestore(blocked)
-}
-
 function saveHomepageMessage() {
     const homepageMessage = homepageMessageTextArea.value
     updateHomepageMessage(homepageMessage)
 }
 
-function saveWhitelist() {
-    const whitelist = whitelistTextArea.value.split("\n").map(s => s.trim()).filter(Boolean);
-    chrome.storage.sync.set({ "whitelistedWebsites": whitelist }, () => {
-        console.log("Whitelisted websites saved to chrome sync storage")
-    });
-}
-
 //syncs data across all instances (ie popup and full tab options) of the extension when something changes 
 function storageChangeHandler(storageChangeData) {
-
-    if (storageChangeData.receivedTextFromNativeApp) {
-        receivedFromNativeAppTextArea.value = storageChangeData.receivedTextFromNativeApp.newValue
-    }
 
     if (storageChangeData.websiteTrackingEnabled) {
         enableWebsiteTrackingCheckbox.checked = storageChangeData.websiteTrackingEnabled.newValue
@@ -128,7 +91,6 @@ function storageChangeHandler(storageChangeData) {
 
 function loadAllDataFromChromeStorage() {
     chrome.storage.sync.get((storageData) => {
-        updateReceivedTextFromNativeApp(storageData);
         updateWebsiteTrackingCheckbox(storageData);
         updateOpenKlausOnNewTabCheckbox(storageData);
     });
@@ -153,15 +115,6 @@ function updateWebsiteTrackingCheckbox(storageData) {
 function updateOpenKlausOnNewTabCheckbox(storageData) {
     if (storageData.openKlausOnNewTab) {
         openKlausOnNewTabCheckbox.checked = storageData.openKlausOnNewTab
-    }
-}
-
-function updateReceivedTextFromNativeApp(storageData) {
-    if (storageData.receivedTextFromNativeApp) {
-        receivedFromNativeAppTextArea.value = storageData.receivedTextFromNativeApp;
-    } else {
-        chrome.storage.sync.set({ receivedTextFromNativeApp: "" });
-        console.log("receivedTextFromNativeApp reset to empty string");
     }
 }
 
@@ -252,17 +205,24 @@ class WebsiteBlocker {
         this.scanEntireUrl = false;
         
         this.storageHandler = new ChromeStorageHandler();
-        this.updateDOMOnLoad();
-        this.addChangeEventHandler();
+        this.onLoad();
+        this.addChangeEventHandlers();
     }
 
-    updateDOMOnLoad() {
+    onLoad() {
+        window.addEventListener("DOMContentLoaded", () => {
+            this.updateDOM()
+        });
+    }
+
+    updateDOM() {
         const objectKeysToLoad = [
             "blockerEnabled",
             "blockedWebsites",
             "whitelistedWebsites",
             "scanEntireUrl"
         ];
+
         objectKeysToLoad.forEach(key => {
             this.storageHandler.getChromeStorage(key, "sync", (result) => {
                 if(key === "blockerEnabled") {
@@ -281,9 +241,9 @@ class WebsiteBlocker {
         })
     }
 
-    addChangeEventHandler() {
+    addChangeEventHandlers() {
         this.storageEventHandler();
-        this.domChangeEventHandler();
+        this.DOMChangeEventHandler();
     }
 
     storageEventHandler() {
@@ -305,7 +265,7 @@ class WebsiteBlocker {
 
     }
 
-    domChangeEventHandler() {
+    DOMChangeEventHandler() {
         this.enableBlockingCheckbox.addEventListener("change", () => {
             this.changeBlockingEnabled(this.enableBlockingCheckbox.checked)
         })
@@ -428,6 +388,125 @@ class WebsiteBlocker {
             console.log(result);
         });
         saveBlocklistToFirestore(blocked)
+    }
+}
+
+class StatisticTracker {
+    constructor() {
+
+    }
+}
+
+class HomepageSettings {
+    constructor() {
+
+    }
+
+}
+
+class NativeCommunication {
+    constructor(
+        receivedFromNativeAppTextArea, 
+        openNativeKlausButton,
+        testButton
+    ) {
+        this.receivedFromNativeAppTextArea = receivedFromNativeAppTextArea;
+        this.openNativeKlausButton = openNativeKlausButton;
+        this.testButton = testButton;
+        this.receivedMessage = "";
+
+        
+        this.storageHandler = new ChromeStorageHandler();
+        this.onLoad();
+        this.addChangeEventHandlers();
+    }
+
+    onLoad() {
+        window.addEventListener("DOMContentLoaded", () => {
+            this.updateDOM()
+            this.refreshBlocklistFromNative();
+        });
+    }
+
+    updateDOM() {
+        const objectKeysToLoad = [
+            "receivedTextFromNativeApp"
+        ];
+
+        objectKeysToLoad.forEach(key => {
+            this.storageHandler.getChromeStorage(key, "sync", (result) => {
+                if(key === "receivedTextFromNativeApp") {
+                    this.updateReceivedTextFromNativeApp(result.receivedTextFromNativeApp)
+                }
+            })
+        })
+    }
+
+    addChangeEventHandlers() {
+        this.storageEventHandler();
+        this.DOMChangeEventHandler();
+    }
+
+    storageEventHandler() {
+        this.storageHandler.addChangeListener("receivedTextFromNativeApp", "sync", (newValue) => {
+            this.updateReceivedTextFromNativeApp(newValue);
+        });
+    }
+
+    DOMChangeEventHandler() {
+        this.openNativeKlausButton.addEventListener("click", () => {
+            this.openNativeKlaus();
+        });
+
+        this.testButton.addEventListener("click", () => {
+            this.testEvent();
+        });
+    }
+
+    updateReceivedTextFromNativeApp(storageData) {
+        try{
+            const message = storageData.receivedTextFromNativeApp;
+            if (message) {
+                this.storageHandler.updateChromeStorage({ "receivedTextFromNativeApp": message }, "sync", (result) => {
+                    console.log("Received text from native app updated: ", result);
+                }); //update chrome storage
+                this.receivedMessage = message; //update class variable
+                this.receivedFromNativeAppTextArea.value = message; //update DOM
+            } else {
+                this.storageHandler.updateChromeStorage({ receivedTextFromNativeApp: "" }, "sync", (result) => {
+                    console.log("receivedTextFromNativeApp reset to empty string", result);
+                }); //update chrome storage
+                this.receivedMessage = ""; //update class variable
+                this.receivedFromNativeAppTextArea.value = ""; //update DOM
+            }
+        }catch(err){
+            console.error("Error updating received text from native app: ", err)
+        }
+    }
+
+    sendMessageToNative(message) {
+        this.sendActionMessageToBackground('sendToNative', message)
+    }
+
+    refreshBlocklistFromNative() {
+        this.sendActionMessageToBackground('refreshBlocklistFromNative', '')
+    }
+
+    openNativeKlaus() {
+        this.sendActionMessageToBackground('openNative', '')
+    }
+
+    testEvent() {
+        console.log("Sending:  hello");
+        this.sendMessageToNative("hello")
+    }
+
+    // 1. Send an action message to the background  
+    async sendActionMessageToBackground(action, message) {
+        const object = { action: action, message: message }
+        await chrome.runtime.sendMessage(object).then((response) =>
+            console.log(response)
+        )
     }
 }
 
