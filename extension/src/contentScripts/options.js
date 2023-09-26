@@ -589,7 +589,6 @@ class HomepageSettings extends OptionsPageModule{
         this.prevConfig = {...this.homepageConfig};
         this.#storageHandler.addChangeListener("homepageConfig", "sync", (newValue) => {
             const diff = this.findDifferentKey(newValue, this.prevConfig);
-            console.log(diff);
             if(diff === "openKlausOnNewTab") {
                 this.changeOpenKlausOnNewTab(newValue["openKlausOnNewTab"]);
             }else if(diff === "homepageWelcomeMessage") {

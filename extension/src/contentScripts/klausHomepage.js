@@ -14,11 +14,14 @@ const hoverableGreeting = document.getElementById('hoverable-greeting');
 const hoverableDate = document.getElementById('hoverable-date');
 const testNameFunctionPair = {'test': () => printText('test'), 'test2': () => printText('test2')}
 
+const clock = document.getElementById('clock');
 
 main()
 
 function main() {
-    chrome.storage.onChanged.addListener(storageChangeData => storageChangeHander(storageChangeData));
+    chrome.storage.onChanged.addListener((storageChangeData, type) => 
+        storageChangeHandler(storageChangeData, type)
+    );
 
     window.addEventListener("DOMContentLoaded", () => {
 
@@ -35,6 +38,8 @@ function main() {
         new Hoverable(hoverableClock);
         new Hoverable(hoverableDate);
 
+        new Clock(clock).startClock();
+
         setInterval(updateClock, 1000);
         updateClock();
     });
@@ -45,20 +50,20 @@ function updateHomepageText(text) {
 }
 
 function loadHomepageConfig() {
-    chrome.storage.local.get("homepageConfig", config => {
+    chrome.storage.sync.get("homepageConfig", config => {
         updateHomepageText(config.homepageConfig.homepageWelcomeMessage)
     })
 }
 
-function updateTime() {
-    const now = new Date();
-    const hours = now.getHours().toString().padStart(2, '0');
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    const seconds = now.getSeconds().toString().padStart(2, '0');
-    const timeString = `${hours}:${minutes}:${seconds}`;
+// function updateTime() {
+//     const now = new Date();
+//     const hours = now.getHours().toString().padStart(2, '0');
+//     const minutes = now.getMinutes().toString().padStart(2, '0');
+//     const seconds = now.getSeconds().toString().padStart(2, '0');
+//     const timeString = `${hours}:${minutes}:${seconds}`;
     
-    document.getElementById('clock').textContent = timeString;
-}
+//     document.getElementById('clock').textContent = timeString;
+// }
 
 function updateDate() {
     const now = new Date();
@@ -74,7 +79,7 @@ function updateDate() {
 }
 
 function updateClock() {
-    updateTime();
+    // updateTime();
     updateDate();
 }
 
@@ -201,16 +206,298 @@ function printText(message) {
 
 function testEvent() {
     // updateHomepageMessage('test');
+    const thing = new ChromeStorageHandler();
+
+    const clockConfig = {
+        format: "12",
+        showSeconds: true,
+    };
+
+    thing.updateChromeStorage({"clockConfig": clockConfig}, "sync", (result) => {
+        console.log(result);
+    })
+    
 }
 
-function storageChangeHander(storageChangeData) {
-    if (storageChangeData.homepageConfig.newValue.homepageWelcomeMessage) {
-        const newMessage = storageChangeData.homepageConfig.newValue.homepageWelcomeMessage;
-        updateHomepageText(newMessage);
-        console.log("Homepage message updated to " + newMessage)
-    }else{
-        console.log("chrome.storage changed but nothing done");
+
+
+function storageChangeHandler(storageChangeData, type) {
+    if(type === "sync") {
+        if(storageChangeData["homepageConfig"]) {
+            const newObject = storageChangeData["homepageConfig"].newValue;
+            console.log(newObject);
+            for(const key in newObject) {
+                console.log(key);
+                if(key === "homepageWelcomeMessage") {
+                    updateHomepageText(newObject[key]);
+                }else if(key === "homepageBackgroundColor") {
+                    document.body.style.backgroundColor = newObject[key];
+                }
+            }
+        }
     }
+}
+
+class ChromeStorageHandler {
+    constructor() {}
+
+    addChangeListener(keyToListenFor, storageType, callback) {
+        chrome.storage.onChanged.addListener((changes, type) => {
+            if(changes[keyToListenFor]) {
+                console.log(changes[keyToListenFor], " changed")
+                if(type === storageType) {
+                    callback(changes[keyToListenFor].newValue)
+                }else{
+                    console.error("Invalid storage type: ", storageType)
+                }
+            }
+        })
+    }
+
+    updateChromeStorage(obj, storageType, callback) {
+        if(storageType === "sync") {
+            chrome.storage.sync.set(obj, () => {
+                this.chromeStorageCallback(callback)
+            });
+        }
+        else if(storageType === "local") {
+            chrome.storage.local.set(obj, () => {
+                this.chromeStorageCallback(callback)
+            });
+        }
+        else {
+            console.error("Invalid storage type: ", storageType)
+            return;
+        }
+    }
+
+    chromeStorageCallback(callback) {
+        if(chrome.runtime.lastError) {
+            console.error("Error updating chrome storage: ", chrome.runtime.lastError)
+        }else{
+            callback("success")
+        }
+    }
+
+    async getChromeStorage(key, storageType, callback) {
+        try{
+            let result;
+            if(storageType === "sync") {
+                result = await chrome.storage.sync.get(key);
+            }
+            else if(storageType === "local") {
+                result = await chrome.storage.local.get(key);
+            }
+            else{
+                console.error("Invalid storage type: ", storageType)
+                return;
+            }
+
+            callback(result);
+        }catch(err){
+            console.error("Error getting chrome storage: ", err)
+        }
+    }
+
+    async getAndCreateChromeStorageIfNull(key, defaultValue, storageType, callback) {
+        try{
+            await this.getChromeStorage(key, storageType, (result) => {
+                if(result[key] === undefined) {
+                    console.log("No data found for " + key + ", creating new key")
+                    this.createNewChromeStorage(key, defaultValue, storageType, (result) => {
+                        console.log("   New key created: ", result);
+                        callback(result[key]);
+                    });
+                }else{
+                    callback(result[key]);
+                }
+            })
+        }catch(err){
+            console.error("Error getting and creating chrome storage: ", err)
+        }
+    }
+
+    createNewChromeStorage(key, value, storageType, callback) {
+        try{
+            let obj = {};
+            obj[key] = value;
+            this.updateChromeStorage(obj, storageType, callback);
+        }catch(err){
+            console.error("Error when creating new chrome storage key: ", err)
+            throw new Error("Uninitialized chrome storage key");
+        }
+    }
+}
+
+
+class HomepageModule {
+    //DOM elements
+    //Class variables
+    //Other
+    constructor() {
+
+    }
+}
+
+class Clock {
+    //DOM elements
+    clockElement
+    //Class variables
+    clockConfig
+    #storageHandler = new ChromeStorageHandler();
+
+    constructor(clock) {
+        this.clockElement = clock;
+        this.clockConfig = {
+            format: "24",
+            showSeconds: true
+        };
+    
+        this.#onLoad();
+        this.#addChangeEventHandlers();
+    }
+
+    #onLoad() {
+        window.addEventListener("DOMContentLoaded", () => {
+            this.updateDOM()
+        });
+    }
+
+    updateDOM() {
+        const config = this.clockConfig;
+        try{
+            this.#storageHandler.getAndCreateChromeStorageIfNull("clockConfig", config, "sync", (result) => {
+                this.prevConfig = {...result};
+                for(const key in result) {
+                    const val = result[key.toString()];
+                    if(key === "format") {
+                        this.changeClockFormat(val);
+                    }else if(key === "showSeconds") {  
+                        this.showSeconds(val);
+                    }
+                }
+            })
+        }catch(err){
+            console.error("Error updating clock DOM: ", err)
+        }
+    }
+
+    #addChangeEventHandlers() {
+        this.#storageEventHandler();
+    }
+
+    #storageEventHandler() {
+        this.prevConfig = {...this.clockConfig};
+        console.log(this.prevConfig)
+        this.#storageHandler.addChangeListener("clockConfig", "sync", (newValue) => {
+            const diff = this.findDifferentKey(newValue, this.prevConfig);
+            console.log(diff);
+            if(diff === "format") {
+                this.changeClockFormat(newValue["format"]);
+            }else if(diff === "showSeconds") {
+                this.showSeconds(newValue["showSeconds"]);
+            }
+            this.prevConfig = {...newValue};
+        });
+    }
+
+    findDifferentKey(obj1, obj2) {
+        for(const key in obj1) {
+            if(obj1[key] !== obj2[key]) {
+                return key;
+            }
+        }
+        return null;
+    }
+
+    startClock() {
+        setInterval(()=>{this.updateTime(this.format, this.showSeconds)}, 1000);
+        this.updateTime(this.format, this.showSeconds);
+    }
+
+    updateTime(format, showSeconds) {
+        this.format = format;
+        this.showSeconds = showSeconds;
+
+        const now = new Date();
+        let ampm = "";
+        let hours = now.getHours()
+        if(this.format === "12") {
+            hours = (now.getHours() % 12 || 12)
+            ampm = hours >= 12 ? 'PM' : 'AM';
+        }
+        hours = hours.toString().padStart(2, '0');
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        let seconds = ":"+now.getSeconds().toString().padStart(2, '0');
+        if(this.showSeconds === false) {
+            seconds = "";
+        }
+
+        const timeString = `${hours}:${minutes}${seconds} ${ampm}`
+        // document.getElementById('clock').textContent = timeString;
+        this.clockElement.textContent = timeString;
+    }
+
+    changeClockFormat(format, updateChromeStorage = false) {
+        try{
+            if(format === "24") {
+                this.clockConfig["format"] = "24";
+
+                if(!updateChromeStorage) { return; }
+                this.#storageHandler.updateChromeStorage({"format": this.clockConfig}, "sync", (result) => {
+                    console.log("Changed clock format to 24hr: ", result);
+                }); //update chrome storage
+            }else if(format === "12") {
+                this.clockConfig["format"] = "12";
+                
+                if(!updateChromeStorage) { return; }
+                this.#storageHandler.updateChromeStorage({"format": this.clockConfig}, "sync", (result) => {
+                    console.log("Changed clock format to 12hr: ", result);
+                }); //update chrome storage
+            }else{
+                console.error("Invalid clock format: " + format);
+            }
+        }catch(err){
+            console.error("Error changing clock format: ", err)
+        }
+    }
+
+    showSeconds(show, updateChromeStorage = false) {
+        try{
+            if(show) {
+                this.clockConfig["showSeconds"] = true;
+
+                if(!updateChromeStorage) { return; }
+                this.#storageHandler.updateChromeStorage(
+                    {"clockConfig": {...this.clockConfig, "showSeconds" : true}},
+                    "sync", (result) => {
+                        console.log("Show seconds turned on: ", result);
+                    }
+                )
+            }else{
+                this.clockConfig["showSeconds"] = false;
+
+                if(!updateChromeStorage) { return; }
+                this.#storageHandler.updateChromeStorage(
+                    {"clockConfig": {...this.clockConfig, "showSeconds" : false}},
+                    "sync", (result) => {
+                        console.log("Show seconds turned off: ", result);
+                    }
+                )
+            }
+        }catch(err){
+            console.error("Error showing seconds: ", err)
+        }
+    }
+}
+
+class Homepage extends HomepageModule {
+    constructor() {
+        super();
+
+    }
+
+
 }
 
 class DocumentClickListener {

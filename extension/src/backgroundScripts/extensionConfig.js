@@ -1,5 +1,7 @@
 const homepageConfig = {};
 homepageConfig.homepageWelcomeMessage = "Welcome to Klaus!";
+homepageConfig.theme = "light";
+homepageConfig.background = {"color": "#fffff"};
 
 async function updateHomepageConfig(propertyName, newValue) {
     try{
@@ -26,6 +28,16 @@ async function updateHomepageMessage(message) {
     }catch(err){
         console.log(err);
     }
+}
+
+async function changeTheme(theme) {
+    await updateHomepageConfig("theme", theme);
+    console.log("Theme changed to " + theme);
+}
+
+async function changeBackground(backgroundObject) {
+    await updateHomepageConfig("background", backgroundObject);
+    console.log("Background changed to " + backgroundObject);
 }
 
 export {
