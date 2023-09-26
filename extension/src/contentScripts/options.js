@@ -50,7 +50,6 @@ function main() {
     )
 }
 
-
 class ChromeStorageHandler {
     constructor() {}
 
@@ -119,6 +118,8 @@ class ChromeStorageHandler {
                     this.createNewChromeStorage(key, defaultValue, storageType, (result) => {
                         console.log("   New key created: ", result);
                         callback(result[key]);
+                        location.reload();
+                        console.log("Reloaded page to load new data");
                     });
                 }else{
                     callback(result[key]);
@@ -281,6 +282,10 @@ class WebsiteBlocker extends OptionsPageModule{
             this.changeBlockingEnabled(newValue);
         });
         
+        this.#storageHandler.addChangeListener("scanEntireUrl", "sync", (newValue) => {
+            this.changeScanEntireUrl(newValue);
+        });
+
         this.#storageHandler.addChangeListener("blockedWebsites", "sync", (newValue) => {
             this.changeBlocklist(newValue);
         })
@@ -288,47 +293,46 @@ class WebsiteBlocker extends OptionsPageModule{
         this.#storageHandler.addChangeListener("whitelistedWebsites", "sync", (newValue) => {
             this.changeWhitelist(newValue);
         })
-
-        this.#storageHandler.addChangeListener("scanEntireUrl", "sync", (newValue) => {
-            this.changeScanEntireUrl(newValue);
-        });
-
     }
 
     #DOMChangeEventHandler() {
         this.enableBlockingCheckbox.addEventListener("change", () => {
-            this.changeBlockingEnabled(this.enableBlockingCheckbox.checked)
+            this.changeBlockingEnabled(this.enableBlockingCheckbox.checked, true)
         })
 
         this.scanEntireUrlCheckbox.addEventListener("change", () => {
-            this.changeScanEntireUrl(this.scanEntireUrlCheckbox.checked);
+            this.changeScanEntireUrl(this.scanEntireUrlCheckbox.checked, true);
         })
         
         this.saveBlocklistButton.addEventListener("click", () => {
-            this.changeBlocklist(this.blocklistTextArea.value)
+            this.changeBlocklist(this.blocklistTextArea.value, true)
         });
         
         this.saveWhitelistButton.addEventListener("click", () => {
-            this.changeWhitelist(this.whitelistTextArea.value)
+            this.changeWhitelist(this.whitelistTextArea.value, true)
         });
     }
 
-    changeBlockingEnabled(status) {
+    changeBlockingEnabled(status, updateChromeStorage = false) {
         try{
             if(status) {
-                this.#storageHandler.updateChromeStorage({"blockerEnabled": true}, "sync", (result) => {
-                    console.log("Blocker enabled: ",  result)
-                }) //update chrome storage
                 this.blockingEnabled = true; //update class variable
                 this.enableBlockingCheckbox.checked = true; //update DOM
                 this.setBlockerBadgeEnabled(true); //update badge
+
+                if(!updateChromeStorage) { return; }
+                this.#storageHandler.updateChromeStorage({"blockerEnabled": true}, "sync", (result) => {
+                    console.log("Blocker enabled: ",  result)
+                }) //update chrome storage
             }else if(status === false){
-                this.#storageHandler.updateChromeStorage({"blockerEnabled": false}, "sync", (result) => {
-                    console.log("Blocker disabled: ",  result)
-                }) //update chrome storage 
                 this.blockingEnabled = false; //update class variable
                 this.enableBlockingCheckbox.checked = false; //update DOM
                 this.setBlockerBadgeEnabled(false); //update badge
+                
+                if(!updateChromeStorage) { return; }
+                this.#storageHandler.updateChromeStorage({"blockerEnabled": false}, "sync", (result) => {
+                    console.log("Blocker disabled: ",  result)
+                }) //update chrome storage 
             }else{
                 console.error("Invalid status: ", status)
             }
@@ -337,7 +341,7 @@ class WebsiteBlocker extends OptionsPageModule{
         }
     }
 
-    changeBlocklist(list) {
+    changeBlocklist(list, updateChromeStorage = false) {
         try{
             let blocklist = list;
             if(typeof list === "string") {
@@ -346,47 +350,55 @@ class WebsiteBlocker extends OptionsPageModule{
             if(blocklist.length === 0) {
                 return;
             }
+            this.blocklist = blocklist; //update class variable
+            this.blocklistTextArea.value = blocklist.join("\n"); //update DOM
+
+            if(!updateChromeStorage) { return; }
             this.#storageHandler.updateChromeStorage({"blockedWebsites": blocklist}, "sync", (result) => {
                 console.log("Blocklist changed: ", result);
             }); //update chrome storage
-            this.blocklist = blocklist; //update class variable
-            this.blocklistTextArea.value = blocklist.join("\n"); //update DOM
         }catch(err){
             console.error("Error changing blocklist: ", err)
         }
 
     }
 
-    changeWhitelist(list) {
+    changeWhitelist(list, updateChromeStorage = false) {
         try{
             let whitelist = list;
             if(typeof list === "string") {
                 whitelist = this.textAreaToArray(list);
             }
+            this.whitelist = whitelist; //update class variable
+            this.whitelistTextArea.value = whitelist.join("\n"); //update DOM
+            
+            if(!updateChromeStorage) { return; }
             this.#storageHandler.updateChromeStorage({"whitelistedWebsites": whitelist}, "sync", (result) => {
                 console.log("Whitelist changed: ", result);
             }); //update chrome storage
-            this.whitelist = whitelist; //update class variable
-            this.whitelistTextArea.value = whitelist.join("\n"); //update DOM
         }catch(err){
             console.error("Error changing blocklist: ", err)
         }
     }
 
-    changeScanEntireUrl(status) {
+    changeScanEntireUrl(status, updateChromeStorage = false) {
         try{    
             if(status) {
+                this.scanEntireUrl = true; //update class variable
+                this.scanEntireUrlCheckbox.checked = true; //update DOM
+                
+                if(!updateChromeStorage) { return; }
                 this.#storageHandler.updateChromeStorage({"scanEntireUrl": true}, "sync", (result) => {
                     console.log("Scan entire URL enabled: ", result);
                 }); //update chrome storage
-                this.scanEntireUrl = true; //update class variable
-                this.scanEntireUrlCheckbox.checked = true; //update DOM
             }else if(status === false){
+                this.scanEntireUrl = false; //update class variable
+                this.scanEntireUrlCheckbox.checked = false; //update DOM
+
+                if(!updateChromeStorage) { return; }
                 this.#storageHandler.updateChromeStorage({"scanEntireUrl": false}, "sync", (result) => {
                     console.log("Scan entire URL disabled: ", result);
                 }); //update chrome storage
-                this.scanEntireUrl = false; //update class variable
-                this.scanEntireUrlCheckbox.checked = false; //update DOM
             }else{
                 console.error("Invalid status: ", status)
             }
@@ -473,24 +485,28 @@ class StatisticTracker extends OptionsPageModule {
 
     #DOMChangeEventHandler() { //anything pertaining to DOM changes, e.g. button clicks
         this.enableStatTrackingCheckbox.addEventListener("change", () => {
-            this.changeTrackingEnabled(this.enableStatTrackingCheckbox.checked)
+            this.changeTrackingEnabled(this.enableStatTrackingCheckbox.checked, true)
         })
     }
 
-    changeTrackingEnabled(status) {
+    changeTrackingEnabled(status, updateChromeStorage = false) {
         try{
             if(status){
+                this.trackingActive = true; //update class variable
+                this.enableStatTrackingCheckbox.checked = true; //update DOM
+
+                if(!updateChromeStorage) { return; }
                 this.#storageHandler.updateChromeStorage({"statisticsTrackingEnabled": true}, "sync", (result) => {
                     console.log("Tracking enabled: ", result);
                 }); //update chrome storage
-                this.trackingActive = true; //update class variable
-                this.enableStatTrackingCheckbox.checked = true; //update DOM
             }else if(status === false){
+                this.trackingActive = false; //update class variable
+                this.enableStatTrackingCheckbox.checked = false; //update DOM
+                
+                if(!updateChromeStorage) { return; }
                 this.#storageHandler.updateChromeStorage({"statisticsTrackingEnabled": false}, "sync", (result) => {
                     console.log("Tracking disabled: ", result);
                 }); //update chrome storage
-                this.trackingActive = false; //update class variable
-                this.enableStatTrackingCheckbox.checked = false; //update DOM
             }
         }catch(err){
             console.error("Error changing tracking enabled status: ", err)
@@ -543,19 +559,19 @@ class HomepageSettings extends OptionsPageModule{
     }
 
     updateDOM() { //loads data from chrome storage and updates DOM
-        const config = {"homepageConfig": this.homepageConfig};
+        const object = this.homepageConfig;
 
         try{
-            this.#storageHandler.getAndCreateChromeStorageIfNull("homepageConfig", config["homepageConfig"], "sync", (result) => {
-                for(const key in config["homepageConfig"]){
-                    if(key === "homepageConfig") {
-                        if(key === "openKlausOnNewTab"){
-                            this.changeOpenKlausOnNewTab(result);
-                        }else if(key === "homepageWelcomeMessage") {
-                            this.changeHomepageMessage(result);
-                        }else if(key === "homepageBackgroundColor") {
-                            this.changeHomepageBackgroundColor(result);
-                        }
+            this.#storageHandler.getAndCreateChromeStorageIfNull("homepageConfig", object, "sync", (result) => {
+                this.prevConfig = {...result};
+                for(const key in result){
+                    const val = result[key.toString()];
+                    if(key === "openKlausOnNewTab"){
+                        this.changeOpenKlausOnNewTab(val);
+                    }else if(key === "homepageWelcomeMessage") {
+                        this.changeHomepageMessage(val);
+                    }else if(key === "homepageBackgroundColor") {
+                        this.changeHomepageBackgroundColor(val);
                     }
                 }
             })
@@ -570,80 +586,96 @@ class HomepageSettings extends OptionsPageModule{
     }
 
     #storageEventHandler() { //anything pertaining to chrome storage changes
-        this.#storageHandler.addChangeListener(this.homepageConfig["openKlausOnNewTab"], "sync", (newValue) => {
-            this.changeOpenKlausOnNewTab(newValue);
-        });
-        this.#storageHandler.addChangeListener(this.homepageConfig["welcomeMessage"], "sync", (newValue) => {
-            this.changeHomepageMessage(newValue);
-        });
-        this.#storageHandler.addChangeListener(this.homepageConfig["homepageBackgroundColor"], "sync", (newValue) => {
-            this.changeHomepageBackgroundColor(newValue);
-        });
+        this.prevConfig = {...this.homepageConfig};
+        this.#storageHandler.addChangeListener("homepageConfig", "sync", (newValue) => {
+            const diff = this.findDifferentKey(newValue, this.prevConfig);
+            console.log(diff);
+            if(diff === "openKlausOnNewTab") {
+                this.changeOpenKlausOnNewTab(newValue["openKlausOnNewTab"]);
+            }else if(diff === "homepageWelcomeMessage") {
+                this.changeHomepageMessage(newValue["homepageWelcomeMessage"]);
+            }else if(diff === "homepageBackgroundColor") {
+                this.changeHomepageBackgroundColor(newValue["homepageBackgroundColor"]);
+            }
 
-        // this.#storageHandler.addChangeListener(homepageConfig, "sync", (newValue) => {
-        //     this.changeOpenKlausOnNewTab(newValue["openKlausOnNewTab"]);
-        //     this.changeHomepageMessage(newValue["welcomeMessage"]);
-        //     this.changeHomepageBackgroundColor(newValue["homepageBackgroundColor"]);
-        // })
+            this.prevConfig = {...newValue};
+        });
+    }
+
+    findDifferentKey(obj1, obj2) {
+        for(const key in obj1) {
+            if(obj1[key] !== obj2[key]) {
+                return key;
+            }
+        }
+        return null;
     }
 
     #DOMChangeEventHandler() { //anything pertaining to DOM changes, e.g. button clicks
         this.openKlausOnNewTabCheckbox.addEventListener("change", () => {
-            this.changeOpenKlausOnNewTab(this.openKlausOnNewTabCheckbox.checked)
-        })
-
-        this.homepageMessageTextArea.addEventListener("change", () => {
-            this.changeHomepageMessage(this.homepageMessageTextArea.value)
+            this.changeOpenKlausOnNewTab(this.openKlausOnNewTabCheckbox.checked, true)
         })
 
         this.saveHomepageMessageButton.addEventListener("click", () => {
-            this.changeHomepageMessage(this.homepageMessageTextArea.value)
+            this.changeHomepageMessage(this.homepageMessageTextArea.value, true)
         })
 
         this.saveHomepageColorButton.addEventListener("click", () => {
-            this.changeHomepageBackgroundColor(this.homepageColorPicker.value)
+            this.changeHomepageBackgroundColor(this.homepageColorPicker.value, true)
         })
     }
 
-    changeOpenKlausOnNewTab(status) {
-        if(status){
-            this.#storageHandler.updateChromeStorage({"homepageConfig": {...this.homepageConfig, "openKlausOnNewTab" : true}}, "sync", (result) => {
-                console.log("Open Klaus on new tab enabled: ", result);
-            }); //update chrome storage
-            this.homepageConfig["openKlausOnNewTab"] = true; //update class variable
-            this.openKlausOnNewTabCheckbox.checked = true; //update DOM
-        }else if(status === false){
-            this.#storageHandler.updateChromeStorage({"homepageConfig": {...this.homepageConfig, "openKlausOnNewTab" : false}}, "sync", (result) => {
-                console.log("Open Klaus on new tab disabled: ", result);
-            }); //update chrome storage
-            this.homepageConfig["openKlausOnNewTab"] = false; //update class variable
-            this.openKlausOnNewTabCheckbox.checked = false; //update DOM
+    changeOpenKlausOnNewTab(status, updateChromeStorage = false) {
+        try{
+            if(status){
+                this.homepageConfig["openKlausOnNewTab"] = true; //update class variable
+                this.openKlausOnNewTabCheckbox.checked = true; //update DOM
+                
+                if(!updateChromeStorage) { return; }
+                this.#storageHandler.updateChromeStorage({"homepageConfig": this.homepageConfig}, "sync", (result) => {
+                    console.log("Open Klaus on new tab enabled: ", result);
+                }); //update chrome storage
+            }else if(status === false){
+                this.homepageConfig["openKlausOnNewTab"] = false; //update class variable
+                this.openKlausOnNewTabCheckbox.checked = false; //update DOM
+    
+                if(!updateChromeStorage) { return; }
+                this.#storageHandler.updateChromeStorage({"homepageConfig": this.homepageConfig}, "sync", (result) => {
+                    console.log("Open Klaus on new tab disabled: ", result);
+                }); //update chrome storage
+            }
+        }catch(err){
+            console.error("Error changing open Klaus on new tab status: ", err)
         }
         
     }
 
-    changeHomepageMessage(message) {
+    changeHomepageMessage(message, updateChromeStorage = false) {
+        // updateHomepageMessage(message); //update chrome storage???
+        this.homepageConfig["homepageWelcomeMessage"] = message; //update class variable
+        this.homepageMessageTextArea.value = message; //update DOM
+
+        if(!updateChromeStorage) { return; }
         this.#storageHandler.updateChromeStorage(
             {"homepageConfig": {...this.homepageConfig, "homepageWelcomeMessage" : message}},
             "sync", (result) => {
                 console.log("Homepage message changed: ", result);
             }
         )
-        updateHomepageMessage(message); //update chrome storage???
-        this.homepageConfig["homepageWelcomeMessage"] = message; //update class variable
-        this.homepageMessageTextArea.value = message; //update DOM
     }
 
-    changeHomepageBackgroundColor(color) {
+    changeHomepageBackgroundColor(color, updateChromeStorage = false) {
+        this.homepageConfig["homepageBackgroundColor"] = color; //update class variable
+        this.homepageColorPicker.value = color; //update DOM
+        document.body.style.backgroundColor = color; //update background color 
+
+        if(!updateChromeStorage) { return; }
         this.#storageHandler.updateChromeStorage(
             {"homepageConfig": {...this.homepageConfig, "homepageBackgroundColor" : color}},
             "sync", (result) => {
                 console.log("Homepage color changed: ", result);
             }
         )
-        this.homepageConfig["homepageBackgroundColor"] = color; //update class variable
-        this.homepageColorPicker.value = color; //update DOM
-        document.body.style.backgroundColor = color;
     }
 }
 
@@ -705,7 +737,7 @@ class NativeCommunication extends OptionsPageModule{
 
     #storageEventHandler() {
         this.#storageHandler.addChangeListener("receivedTextFromNativeApp", "sync", (newValue) => {
-            this.updateReceivedTextFromNativeApp(newValue);
+            this.updateReceivedTextFromNativeApp(newValue, true);
         });
     }
 
@@ -719,21 +751,25 @@ class NativeCommunication extends OptionsPageModule{
         });
     }
 
-    updateReceivedTextFromNativeApp(storageData) {
+    updateReceivedTextFromNativeApp(storageData, updateChromeStorage = false) {
         try{
             const message = storageData.receivedTextFromNativeApp;
             if (message) {
+                this.receivedMessage = message; //update class variable
+                this.receivedFromNativeAppTextArea.value = message; //update DOM
+
+                if(!updateChromeStorage) { return; }
                 this.#storageHandler.updateChromeStorage({ "receivedTextFromNativeApp": message }, "sync", (result) => {
                     console.log("Received text from native app updated: ", result);
                 }); //update chrome storage
-                this.receivedMessage = message; //update class variable
-                this.receivedFromNativeAppTextArea.value = message; //update DOM
             } else {
+                this.receivedMessage = ""; //update class variable
+                this.receivedFromNativeAppTextArea.value = ""; //update DOM
+
+                if(!updateChromeStorage) { return; }
                 this.#storageHandler.updateChromeStorage({ receivedTextFromNativeApp: "" }, "sync", (result) => {
                     console.log("receivedTextFromNativeApp reset to empty string", result);
                 }); //update chrome storage
-                this.receivedMessage = ""; //update class variable
-                this.receivedFromNativeAppTextArea.value = ""; //update DOM
             }
         }catch(err){
             console.error("Error updating received text from native app: ", err)
