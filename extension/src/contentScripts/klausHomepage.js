@@ -14,6 +14,8 @@ const hoverableGreeting = document.getElementById('hoverable-greeting');
 const hoverableDate = document.getElementById('hoverable-date');
 const testNameFunctionPair = {'test': () => printText('test'), 'test2': () => printText('test2')}
 
+
+
 const clock = document.getElementById('clock');
 
 main()
@@ -34,11 +36,20 @@ function main() {
         restoreTodoList();
         loadHomepageConfig();
 
-        new Hoverable(hoverableGreeting);
-        new Hoverable(hoverableClock);
-        new Hoverable(hoverableDate);
+        const homepageClock = new Clock(clock)
+        const clockOptionFunctionPair = {
+            '12hr': () => homepageClock.changeClockFormat("12", true),
+            '24hr': () => homepageClock.changeClockFormat("24", true),
+            'show seconds': () => homepageClock.showSeconds(true, true),
+            'hide seconds': () => homepageClock.showSeconds(false, true)
+        }
+        
+        new Hoverable(hoverableGreeting, testNameFunctionPair);
+        new Hoverable(hoverableClock, clockOptionFunctionPair);
+        new Hoverable(hoverableDate, testNameFunctionPair);
 
-        new Clock(clock).startClock();
+        homepageClock.startClock();
+
 
         setInterval(updateClock, 1000);
         updateClock();
@@ -344,6 +355,8 @@ class Clock {
     clockElement
     //Class variables
     clockConfig
+    timeString
+    //Other
     #storageHandler = new ChromeStorageHandler();
 
     constructor(clock) {
@@ -352,6 +365,7 @@ class Clock {
             format: "24",
             showSeconds: true
         };
+        this.timeString = ``; 
     
         this.#onLoad();
         this.#addChangeEventHandlers();
@@ -411,47 +425,46 @@ class Clock {
     }
 
     startClock() {
-        setInterval(()=>{this.updateTime(this.format, this.showSeconds)}, 1000);
-        this.updateTime(this.format, this.showSeconds);
+        setInterval(()=>{this.updateTime()}, 1000);
+        this.updateTime();
     }
 
-    updateTime(format, showSeconds) {
-        this.format = format;
-        this.showSeconds = showSeconds;
-
+    updateTime() {
         const now = new Date();
         let ampm = "";
         let hours = now.getHours()
-        if(this.format === "12") {
-            hours = (now.getHours() % 12 || 12)
+        if(this.clockConfig.format === "12") {
             ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = (now.getHours() % 12 || 12)
         }
         hours = hours.toString().padStart(2, '0');
         const minutes = now.getMinutes().toString().padStart(2, '0');
         let seconds = ":"+now.getSeconds().toString().padStart(2, '0');
-        if(this.showSeconds === false) {
+        if(this.clockConfig.showSeconds === false) {
             seconds = "";
         }
 
-        const timeString = `${hours}:${minutes}${seconds} ${ampm}`
+        this.timeString = `${hours}:${minutes}${seconds} ${ampm}`
         // document.getElementById('clock').textContent = timeString;
-        this.clockElement.textContent = timeString;
+        this.clockElement.textContent = this.timeString;
     }
 
     changeClockFormat(format, updateChromeStorage = false) {
         try{
             if(format === "24") {
                 this.clockConfig["format"] = "24";
+                this.updateTime();
 
                 if(!updateChromeStorage) { return; }
-                this.#storageHandler.updateChromeStorage({"format": this.clockConfig}, "sync", (result) => {
+                this.#storageHandler.updateChromeStorage({"clockConfig": this.clockConfig}, "sync", (result) => {
                     console.log("Changed clock format to 24hr: ", result);
                 }); //update chrome storage
             }else if(format === "12") {
                 this.clockConfig["format"] = "12";
+                this.updateTime();
                 
                 if(!updateChromeStorage) { return; }
-                this.#storageHandler.updateChromeStorage({"format": this.clockConfig}, "sync", (result) => {
+                this.#storageHandler.updateChromeStorage({"clockConfig": this.clockConfig}, "sync", (result) => {
                     console.log("Changed clock format to 12hr: ", result);
                 }); //update chrome storage
             }else{
@@ -466,6 +479,7 @@ class Clock {
         try{
             if(show) {
                 this.clockConfig["showSeconds"] = true;
+                this.updateTime();
 
                 if(!updateChromeStorage) { return; }
                 this.#storageHandler.updateChromeStorage(
@@ -476,6 +490,7 @@ class Clock {
                 )
             }else{
                 this.clockConfig["showSeconds"] = false;
+                this.updateTime();
 
                 if(!updateChromeStorage) { return; }
                 this.#storageHandler.updateChromeStorage(
@@ -533,9 +548,10 @@ class DocumentClickListener {
 
 //heiarchy (parent to child): Hoverable -> FlyoutButton -> OptionDropdown
 class Hoverable {
-    constructor(element) {
+    constructor(element, optionNameFunctionPairs) {
         this.element = element;
-        this.childFlyoutButton = this.createChildFlyoutButton(); //creates flyoutButton on instantiation
+        this.childFlyoutButton = this.createChildFlyoutButton(optionNameFunctionPairs); //creates flyoutButton on instantiation
+        this.optionNameFunctionPairs = optionNameFunctionPairs;
         this.addClickHandler();
     }
 
@@ -551,16 +567,16 @@ class Hoverable {
         //on hover, just show the flyoutButton (this is handled by css)
     }
 
-    createChildFlyoutButton() {
-        return new FlyoutButton(this.element);
+    createChildFlyoutButton(optionNameFunctionPairs) {
+        return new FlyoutButton(this.element, optionNameFunctionPairs);
     }
 }
 
 class FlyoutButton {
-    constructor(parent) {
+    constructor(parent, optionNameFunctionPairs) {
         this.parentHoverable = parent;
         [this.flyoutButton, this.rotateSpan] = this.createFlyoutButton();
-        this.childOptionDropdown = this.createChildOptionDropdown(testNameFunctionPair); //creates optionDropdown on instantiation
+        this.childOptionDropdown = this.createChildOptionDropdown(optionNameFunctionPairs); //creates optionDropdown on instantiation
         this.opened = false;
     }
 
