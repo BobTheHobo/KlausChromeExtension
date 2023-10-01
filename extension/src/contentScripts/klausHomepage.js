@@ -12,48 +12,60 @@ const testButton = document.getElementById('testButton');
 const hoverableClock = document.getElementById('hoverable-clock');
 const hoverableGreeting = document.getElementById('hoverable-greeting');
 const hoverableDate = document.getElementById('hoverable-date');
-const testNameFunctionPair = {'test': () => printText('test'), 'test2': () => printText('test2')}
-
 
 
 const clock = document.getElementById('clock');
-
-main()
 
 function main() {
     chrome.storage.onChanged.addListener((storageChangeData, type) => 
         storageChangeHandler(storageChangeData, type)
     );
 
-    window.addEventListener("DOMContentLoaded", () => {
+    // testFirestoreButton.addEventListener('click', testFirestore);
+    addTodoButton.addEventListener('click', addTodoItem);
+    todoListPreview.addEventListener('click', checkTodoItem);
+    todoInput.addEventListener('keyup', addTodoOnEnter);
+    testButton.addEventListener('click', testEvent);
 
-        // testFirestoreButton.addEventListener('click', testFirestore);
-        addTodoButton.addEventListener('click', addTodoItem);
-        todoListPreview.addEventListener('click', checkTodoItem);
-        todoInput.addEventListener('keyup', addTodoOnEnter);
-        testButton.addEventListener('click', testEvent);
+    restoreTodoList();
+    loadHomepageConfig();
 
-        restoreTodoList();
-        loadHomepageConfig();
+    const homepageClock = new Clock(clock)
 
-        const homepageClock = new Clock(clock)
-        const clockOptionFunctionPair = {
-            '12hr': () => homepageClock.changeClockFormat("12", true),
-            '24hr': () => homepageClock.changeClockFormat("24", true),
-            'show seconds': () => homepageClock.showSeconds(true, true),
-            'hide seconds': () => homepageClock.showSeconds(false, true)
-        }
-        
-        new Hoverable(hoverableGreeting, testNameFunctionPair);
-        new Hoverable(hoverableClock, clockOptionFunctionPair);
-        new Hoverable(hoverableDate, testNameFunctionPair);
+    const testNameFunctionPair = [
+        [
+            {"none": "eadf"},
+            {"options1" : {'test': () => printText('test')}}
+        ],
+        [
+            {"none": "feadf"},
+            {"options2" : {'test2': () => printText('test2')}}
+        ]
+    ]
 
-        homepageClock.startClock();
+    const clockFunctionPair1 = [
+        {"clockConfig": "format"},
+        {'12': {'12hr': () => homepageClock.changeClockFormat("12", true)}},
+        {'24': {'24hr': () => homepageClock.changeClockFormat("24", true)}}
+    ]
+    const clockFunctionPair2 = [
+        {"clockConfig": "showSeconds"},
+        {false: {'Hide Seconds': () => homepageClock.showSeconds(false, true)}},
+        {true: {'Show Seconds': () => homepageClock.showSeconds(true, true)}}
+    ]
+    const clockOptionFunctionPairs = [clockFunctionPair1, clockFunctionPair2]
+
+    
+    new Hoverable(hoverableGreeting, testNameFunctionPair);
+    new Hoverable(hoverableClock, clockOptionFunctionPairs);
+    new Hoverable(hoverableDate, testNameFunctionPair);
+
+    homepageClock.startClock();
 
 
-        setInterval(updateClock, 1000);
-        updateClock();
-    });
+
+    setInterval(updateClock, 1000);
+    updateClock();
 } 
 
 function updateHomepageText(text) {
@@ -369,10 +381,11 @@ class Clock {
     
         this.#onLoad();
         this.#addChangeEventHandlers();
+
     }
 
     #onLoad() {
-        window.addEventListener("DOMContentLoaded", () => {
+        document.addEventListener("DOMContentLoaded", () => {
             this.updateDOM()
         });
     }
@@ -405,7 +418,6 @@ class Clock {
         console.log(this.prevConfig)
         this.#storageHandler.addChangeListener("clockConfig", "sync", (newValue) => {
             const diff = this.findDifferentKey(newValue, this.prevConfig);
-            console.log(diff);
             if(diff === "format") {
                 this.changeClockFormat(newValue["format"]);
             }else if(diff === "showSeconds") {
@@ -575,6 +587,7 @@ class Hoverable {
 class FlyoutButton {
     constructor(parent, optionNameFunctionPairs) {
         this.parentHoverable = parent;
+        this.optionNameFunctionPairs = optionNameFunctionPairs;
         [this.flyoutButton, this.rotateSpan] = this.createFlyoutButton();
         this.childOptionDropdown = this.createChildOptionDropdown(optionNameFunctionPairs); //creates optionDropdown on instantiation
         this.opened = false;
@@ -588,7 +601,7 @@ class FlyoutButton {
     }
 
     openFlyoutAndDropdown() {
-        this.childOptionDropdown.createOptionDropdown();
+        this.childOptionDropdown.createOptionDropdown(this.optionNameFunctionPairs);
         this.keepFlyoutOpen(true);
         this.rotateTransition(true);
         this.opened = true;
@@ -661,32 +674,17 @@ class OptionDropdown {
         this.parentFlyoutButton = parent;
         this.dropdown = null;
         this.optionNameFunctionPairs = optionNameFunctionPairs;
+        this.optionDropdownList = document.createElement('ul');
+        this.toggleableOptions = this.createToggleableOptions(this.optionDropdownList, this.optionNameFunctionPairs);
     }
 
-    createOptionDropdown() {
+    createOptionDropdown(optionNameFunctionPairs) {
         const dropdownContainer = document.createElement('span')
         dropdownContainer.className = 'option-dropdown-container';
 
-        const optionDropdownList = document.createElement('ul');
-        optionDropdownList.className = 'option-dropdown-list';
-
-        const names = Object.keys(this.optionNameFunctionPairs);
-        const functions = Object.values(this.optionNameFunctionPairs);
+        this.optionDropdownList.className = 'option-dropdown-list';
         
-        for(let i=0; i<names.length; i++) {
-            let option = document.createElement('li');
-            option.className = 'option-dropdown-item'
-            option.addEventListener('click', ()=> {
-                functions[i]();
-            })
-
-            let optionText = document.createElement('t');
-            optionText.textContent = names[i];
-
-            option.appendChild(optionText);
-            optionDropdownList.appendChild(option);
-        }
-        dropdownContainer.appendChild(optionDropdownList);
+        dropdownContainer.appendChild(this.optionDropdownList);
         this.parentFlyoutButton.appendChild(dropdownContainer);
         
         dropdownContainer.offsetWidth; //forces reflow, triggering transition  
@@ -699,4 +697,128 @@ class OptionDropdown {
     removeOptionDropdown() {
         this.dropdown.remove();
     }
+
+    createToggleableOptions(parentList, toggleableFunctionPairs) {
+        for(const toggleOption of toggleableFunctionPairs) {
+            if(Object.keys(toggleOption[0])[0] === "none") {
+                new Option(parentList, toggleOption).createListElement();
+            }else{
+                new ToggleableOption(parentList, toggleOption).createListElement();
+            }
+        }
+    }
 }
+
+class Option {
+    constructor(parentList, functionPairsObj) {
+        this.functionPairsObj = functionPairsObj;
+        this.functionPairs = this.functionPairsObj.slice(1);
+        
+        this.parentList = parentList;
+        this.currentIndex = 0;
+        this.currentPair = Object.values(this.functionPairs[this.currentIndex])[0];
+        this.totalFunctions = this.functionPairs.length;
+        this.optionText = document.createElement('t');
+    }
+
+    executeCurrentFunction() {
+        this.currentFunction();
+    }
+
+    createListElement() {
+        this.currentName = Object.keys(this.currentPair)[0];
+        this.currentFunction = Object.values(this.currentPair)[0];
+
+        let option = document.createElement('li');
+        option.className = 'option-dropdown-item'
+        option.addEventListener('click', () => {
+            this.executeCurrentFunction();
+        });
+
+        this.optionText.textContent = this.currentName;
+
+        option.appendChild(this.optionText);
+        this.parentList.appendChild(option);
+    }
+}
+
+//takes an array of function pair objects consisiting of name:function
+class ToggleableOption {
+    constructor(parentList, functionPairsObj) {
+        this.functionPairsObj = functionPairsObj;
+        this.associatedStorageConfig = this.functionPairsObj[0];
+        this.associatedStorageConfigKey = Object.keys(this.associatedStorageConfig)[0]
+        this.associatedStorageConfigValue = Object.values(this.associatedStorageConfig)[0]        
+
+        this.toggleableFunctionPairs = this.functionPairsObj.slice(1);
+
+        this.parentList = parentList;
+        this.currentIndex = 0;
+        this.currentPair = Object.values(this.toggleableFunctionPairs[this.currentIndex])[0];
+        this.totalFunctions = this.toggleableFunctionPairs.length;
+        this.optionText = document.createElement('t');
+
+        this.storageHandler = new ChromeStorageHandler();
+    }
+
+    toggleNextOption() {
+        this.currentIndex = (this.currentIndex + 1) % this.totalFunctions;
+        this.updateOptionBasedOnIndex();
+    }
+
+    togglePreviousOption() {
+        this.currentIndex = (this.currentIndex - 1) % this.totalFunctions;
+        this.updateOptionBasedOnIndex();
+    }
+
+    updateOptionBasedOnIndex() {
+        this.currentPair = Object.values(this.toggleableFunctionPairs[this.currentIndex])[0];
+        this.currentFunction = Object.values(this.currentPair)[0];
+        this.currentName = Object.keys(this.currentPair)[0];
+        this.optionText.textContent = this.currentName;
+    }
+
+    executeCurrentFunction() {
+        this.currentFunction();
+    }
+
+    createListElement() {
+        this.checkStorageForCurrentOption();
+        
+        this.currentName = Object.keys(this.currentPair)[0];
+        this.currentFunction = Object.values(this.currentPair)[0];
+
+        let toggleableOption = document.createElement('li');
+        toggleableOption.className = 'option-dropdown-item'
+        toggleableOption.addEventListener('click', () => {
+            this.executeCurrentFunction();
+            this.toggleNextOption();
+        });
+
+        this.optionText.textContent = this.currentName;
+
+        toggleableOption.appendChild(this.optionText);
+        this.parentList.appendChild(toggleableOption);
+    }
+
+    async checkStorageForCurrentOption() {
+        //check storage for current option, if it exists, set currentIndex to that index
+        await this.storageHandler.getChromeStorage(this.associatedStorageConfigKey, "sync", (result) => {
+            const storageValue = result[this.associatedStorageConfigKey][this.associatedStorageConfigValue]
+            if(storageValue !== undefined) {
+                const configValue = storageValue.toString();
+                for(let i = 0; i < this.toggleableFunctionPairs.length; i++) {
+                    const curObj = this.toggleableFunctionPairs[i];
+                    const functionName = Object.keys(curObj)[0].toString();
+                    if(functionName !== configValue) {
+                        this.currentIndex = i;
+                        this.updateOptionBasedOnIndex();
+                        return;
+                    }
+                }
+            }
+        })
+    }
+}
+
+main();
