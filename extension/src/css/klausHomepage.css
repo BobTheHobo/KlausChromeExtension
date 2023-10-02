@@ -74,8 +74,7 @@ body {
 
 /* navbar active link */
 .topnav a.active {
-    background-color: #b1b1b1;
-    color: white;
+    text-decoration: underline;
 }
 
 /* footer */
@@ -356,4 +355,18 @@ body {
     &:hover {
         background-color: rgba(0, 0, 0, 0.05);
     }
+}
+
+.option-dropdown-input {
+    appearance: auto;
+    position: absolute;
+    top: 100%;
+    left: 0%;
+    &:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+}
+
+#greetingtext {
+    display: flex;
 }

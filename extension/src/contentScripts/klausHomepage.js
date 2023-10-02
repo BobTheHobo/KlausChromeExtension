@@ -15,23 +15,17 @@ const hoverableDate = document.getElementById('hoverable-date');
 
 
 const clock = document.getElementById('clock');
+const greetingtext = document.getElementById('greetingtext');
+
+
 
 function main() {
-    chrome.storage.onChanged.addListener((storageChangeData, type) => 
-        storageChangeHandler(storageChangeData, type)
-    );
-
-    // testFirestoreButton.addEventListener('click', testFirestore);
-    addTodoButton.addEventListener('click', addTodoItem);
-    todoListPreview.addEventListener('click', checkTodoItem);
-    todoInput.addEventListener('keyup', addTodoOnEnter);
-    testButton.addEventListener('click', testEvent);
-
-    restoreTodoList();
-    loadHomepageConfig();
-
-    const homepageClock = new Clock(clock)
-
+    const homepageMessageNameFunctionPair = [
+        [
+            {"none": ""},
+            {"option1": {'Change message': () => homepageMessage.openTextInputEditor()}}
+        ]
+    ]
     const testNameFunctionPair = [
         [
             {"none": "eadf"},
@@ -42,7 +36,6 @@ function main() {
             {"options2" : {'test2': () => printText('test2')}}
         ]
     ]
-
     const clockFunctionPair1 = [
         {"clockConfig": "format"},
         {'12': {'12hr': () => homepageClock.changeClockFormat("12", true)}},
@@ -55,38 +48,30 @@ function main() {
     ]
     const clockOptionFunctionPairs = [clockFunctionPair1, clockFunctionPair2]
 
+    // chrome.storage.onChanged.addListener((storageChangeData, type) => 
+    //     storageChangeHandler(storageChangeData, type)
+    // );
+
+    // testFirestoreButton.addEventListener('click', testFirestore);
+    addTodoButton.addEventListener('click', addTodoItem);
+    todoListPreview.addEventListener('click', checkTodoItem);
+    todoInput.addEventListener('keyup', addTodoOnEnter);
+    testButton.addEventListener('click', testEvent);
+
+    restoreTodoList();
+
+    const homepageClock = new Clock(clock)
+    const homepageMessage = new HomepageMessage(greetingtext);
     
-    new Hoverable(hoverableGreeting, testNameFunctionPair);
+    new Hoverable(hoverableGreeting, homepageMessageNameFunctionPair);
     new Hoverable(hoverableClock, clockOptionFunctionPairs);
     new Hoverable(hoverableDate, testNameFunctionPair);
 
     homepageClock.startClock();
 
-
-
     setInterval(updateClock, 1000);
     updateClock();
 } 
-
-function updateHomepageText(text) {
-    greetingtext.textContent = text;
-}
-
-function loadHomepageConfig() {
-    chrome.storage.sync.get("homepageConfig", config => {
-        updateHomepageText(config.homepageConfig.homepageWelcomeMessage)
-    })
-}
-
-// function updateTime() {
-//     const now = new Date();
-//     const hours = now.getHours().toString().padStart(2, '0');
-//     const minutes = now.getMinutes().toString().padStart(2, '0');
-//     const seconds = now.getSeconds().toString().padStart(2, '0');
-//     const timeString = `${hours}:${minutes}:${seconds}`;
-    
-//     document.getElementById('clock').textContent = timeString;
-// }
 
 function updateDate() {
     const now = new Date();
@@ -242,25 +227,6 @@ function testEvent() {
     
 }
 
-
-
-function storageChangeHandler(storageChangeData, type) {
-    if(type === "sync") {
-        if(storageChangeData["homepageConfig"]) {
-            const newObject = storageChangeData["homepageConfig"].newValue;
-            console.log(newObject);
-            for(const key in newObject) {
-                console.log(key);
-                if(key === "homepageWelcomeMessage") {
-                    updateHomepageText(newObject[key]);
-                }else if(key === "homepageBackgroundColor") {
-                    document.body.style.backgroundColor = newObject[key];
-                }
-            }
-        }
-    }
-}
-
 class ChromeStorageHandler {
     constructor() {}
 
@@ -359,6 +325,106 @@ class HomepageModule {
     //Other
     constructor() {
 
+    }
+}
+
+class HomepageMessage {
+    //DOM elements
+    greetingTextElement
+    greetingText
+    //Class variables
+    //Other
+    #storageHandler = new ChromeStorageHandler();
+
+    constructor(greetingTextElement) {
+        this.greetingTextElement = greetingTextElement;
+
+        this.homepageConfig = {
+            "homepageBackgroundColor":"#ffffff",
+            "homepageWelcomeMessage":"Welcome to Klaus!",
+            "openKlausOnNewTab":true
+        }
+    
+        this.#onLoad();
+        this.#addChangeEventHandlers();
+    }
+
+    updateHomepageText(text, updateChromeStorage = false) {
+        try{
+            this.greetingTextElement.textContent = text; //update DOM
+
+            if(!updateChromeStorage) { return; }
+            this.#storageHandler.updateChromeStorage({"homepageConfig": {...this.homepageConfig, "homepageWelcomeMessage" : text}}, "sync", (result) => {
+                console.log("Changed homepage greeting text: ", result);
+            }); //update chrome storage
+        }catch(err){
+            console.error("Error updating homepage greeting text: ", err)
+        }
+    }
+
+    openTextInputEditor() {
+        this.greetingTextElement.contentEditable = true;
+        this.greetingTextElement.focus();
+
+        this.greetingTextElement.addEventListener('keyup', (event) => {
+            if(event.key === 'Enter') {
+                this.greetingTextElement.blur();
+                event.preventDefault(); //prevents you from adding a new line
+            }
+        });
+        this.greetingTextElement.addEventListener('blur', () => {
+            this.updateHomepageText(this.greetingTextElement.textContent, true);
+            this.greetingTextElement.contentEditable = false;
+        })
+    }
+
+
+    #onLoad() {
+        document.addEventListener("DOMContentLoaded", () => {
+            this.updateDOM()
+        });
+    }
+
+    updateDOM() {
+        const config = this.homepageConfig;
+        try{
+            this.#storageHandler.getAndCreateChromeStorageIfNull("homepageConfig", config, "sync", (result) => {
+                this.prevConfig = {...result};
+                for(const key in result) {
+                    const val = result[key.toString()];
+                    if(key === "homepageWelcomeMessage") {  
+                        this.updateHomepageText(val)
+                    }
+                }
+            })
+        }catch(err){
+            console.error("Error updating homepage greeting DOM: ", err)
+        }
+    }
+
+    #addChangeEventHandlers() {
+        this.#storageEventHandler();
+    }
+
+    #storageEventHandler() {
+        this.prevConfig = {...this.homepageConfig};
+        console.log(this.prevConfig)
+        this.#storageHandler.addChangeListener("homepageConfig", "sync", (newValue) => {
+            const diff = this.findDifferentKey(newValue, this.prevConfig);
+            if(diff === "homepageWelcomeMessage") {
+                this.updateHomepageText(newValue["homepageWelcomeMessage"]);
+            }
+            this.prevConfig = {...newValue};
+        });
+    }
+
+    findDifferentKey(obj1, obj2) {
+        for(const key in obj1) {
+            if(obj1[key] !== obj2[key]) {
+                return key;
+            }
+        }
+        return null;
     }
 }
 
@@ -700,8 +766,11 @@ class OptionDropdown {
 
     createToggleableOptions(parentList, toggleableFunctionPairs) {
         for(const toggleOption of toggleableFunctionPairs) {
-            if(Object.keys(toggleOption[0])[0] === "none") {
+            const optionType = Object.keys(toggleOption[0])[0];
+            if(optionType === "none") {
                 new Option(parentList, toggleOption).createListElement();
+            }else if(optionType === "input") {
+                new OptionWithInput(parentList, toggleOption).createListElement();
             }else{
                 new ToggleableOption(parentList, toggleOption).createListElement();
             }
@@ -741,6 +810,55 @@ class Option {
         this.parentList.appendChild(option);
     }
 }
+
+class OptionWithInput extends Option {
+    constructor(parentList, functionPairsObj) {
+        super(parentList, functionPairsObj);
+        this.input = document.createElement('input');
+    }
+
+    executeCurrentFunction() {
+        this.currentFunction();
+    }
+
+    createListElement() {
+        this.currentName = Object.keys(this.currentPair)[0];
+        this.currentFunction = Object.values(this.currentPair)[0];
+
+        let option = document.createElement('li');
+        option.className = 'option-dropdown-item'
+
+        this.optionText.textContent = this.currentName;
+
+        option.appendChild(this.optionText);
+        this.parentList.appendChild(option);
+
+        this.createInput(this.optionText)
+    }
+
+    createInput(parentElement) {
+        this.input.className = 'option-dropdown-input';
+        this.input.type = 'text';
+        this.input.placeholder = 'Enter text here';
+
+        parentElement.appendChild(this.input);
+        this.input.focus();
+
+        this.input.addEventListener('keyup', (event) => {
+            if(event.key === 'Enter') {
+                this.input.blur();
+            }
+        });
+        this.input.addEventListener('blur', () => {
+            this.executeCurrentFunction();
+            parentElement.click(); //closes b/c bubbling
+        });
+        this.input.addEventListener('click', (event) => {
+            event.stopPropagation();
+        });
+    }
+}
+        
 
 //takes an array of function pair objects consisiting of name:function
 class ToggleableOption {
