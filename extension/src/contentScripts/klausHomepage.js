@@ -213,18 +213,7 @@ function printText(message) {
 }
 
 function testEvent() {
-    // updateHomepageMessage('test');
-    const thing = new ChromeStorageHandler();
-
-    const clockConfig = {
-        format: "12",
-        showSeconds: true,
-    };
-
-    thing.updateChromeStorage({"clockConfig": clockConfig}, "sync", (result) => {
-        console.log(result);
-    })
-    
+    document.body.classList.toggle('gradient-background');
 }
 
 class ChromeStorageHandler {
