@@ -338,6 +338,7 @@ class HomepageMessage {
 
     constructor(greetingTextElement) {
         this.greetingTextElement = greetingTextElement;
+        this.addInputEventListeners();
 
         this.homepageConfig = {
             "homepageBackgroundColor":"#ffffff",
@@ -362,20 +363,32 @@ class HomepageMessage {
         }
     }
 
+    addInputEventListeners() {
+        this.enterEvent = this.enterEvent.bind(this);
+        this.blurEvent = this.blurEvent.bind(this);
+
+        this.greetingTextElement.addEventListener('keyup', this.enterEvent);
+        this.greetingTextElement.addEventListener('blur', this.blurEvent)
+    }
+
     openTextInputEditor() {
         this.greetingTextElement.contentEditable = true;
         this.greetingTextElement.focus();
+    }
 
-        this.greetingTextElement.addEventListener('keyup', (event) => {
-            if(event.key === 'Enter') {
-                this.greetingTextElement.blur();
-                event.preventDefault(); //prevents you from adding a new line
-            }
-        });
-        this.greetingTextElement.addEventListener('blur', () => {
-            this.updateHomepageText(this.greetingTextElement.textContent, true);
-            this.greetingTextElement.contentEditable = false;
-        })
+    enterEvent(event) {
+        // this.greetingTextElement
+        if(event.key === 'Enter') {
+            this.greetingTextElement.blur();
+            event.preventDefault(); //prevents you from adding a new line
+            console.log("what")
+        }
+    }
+
+    blurEvent(event){
+        console.log(this.greetingTextElement.textContent)
+        this.updateHomepageText(this.greetingTextElement.textContent, true);
+        this.greetingTextElement.contentEditable = false;
     }
 
 
