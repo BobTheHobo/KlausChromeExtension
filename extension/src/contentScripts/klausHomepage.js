@@ -76,7 +76,7 @@ function main() {
 function updateDate() {
     const now = new Date();
     const day = now.getDate().toString().padStart(2,"0");
-    const month = now.getMonth().toString().padStart(2,"0");
+    const month = (now.getMonth()+1).toString().padStart(2,"0");
     const year = now.getFullYear().toString().padStart(4,"0");
     const dayOfWeekStrings = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
     const dayOfWeek = dayOfWeekStrings[now.getDay()];
