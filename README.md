@@ -1,5 +1,7 @@
 # KlausChromeExtension
 
+**The native-app-old branch is no longer in active development and is here in case I ever want to come back to it (not likely)**
+
 ## Setup
 
 ### Prepare Extension 
